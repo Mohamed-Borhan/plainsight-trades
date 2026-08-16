@@ -1,6 +1,6 @@
 document.documentElement.classList.add("js");
 
-const signals = [
+let signals = [
   {
     ticker: "KMX",
     company: "CarMax",
@@ -134,12 +134,42 @@ const trustLeaders = [
 
 const compactMoney = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 });
 const whole = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+const readableDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
 const signalRows = document.querySelector("#signal-rows");
 const signalEmpty = document.querySelector("#signal-empty");
 const searchInput = document.querySelector("#signal-search");
 const filterButtons = [...document.querySelectorAll("[data-filter]")];
 let selectedTicker = signals[0].ticker;
 let moveFilter = "all";
+
+function recordToSignal(record) {
+  const filedDate = record.filedAt ? new Date(record.filedAt) : null;
+  return {
+    ...record,
+    filed: filedDate && !Number.isNaN(filedDate.valueOf()) ? `Filed ${readableDate.format(filedDate)}` : "Filed date N/A",
+    positionChange: record.positionChange ?? null,
+    move5d: typeof record.move5d === "number" ? record.move5d : null,
+    trust: record.trust ?? null,
+    trustN: record.trustN ?? 0,
+    strength: record.strength ?? 0
+  };
+}
+
+function displayDate(value) {
+  if (!value) return "N/A";
+  const parsed = new Date(`${value.slice(0, 10)}T12:00:00`);
+  return Number.isNaN(parsed.valueOf()) ? value : readableDate.format(parsed);
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>'"]/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "'": "&#39;",
+    '"': "&quot;"
+  })[character]);
+}
 
 function trustStatus(score) {
   if (score === null) return "Unscored";
@@ -164,8 +194,8 @@ function renderContext(signal) {
   setField("trust-status", trustStatus(signal.trust));
   setField("trust-caption", signal.trust === null ? "Not enough mature public signals to score this history." : `Based on ${signal.trustN} mature historical signal${signal.trustN === 1 ? "" : "s"}; low sample confidence.`);
   setField("value", compactMoney.format(signal.value));
-  setField("price", `$${signal.price.toFixed(2)}`);
-  setField("shares-after", whole.format(signal.sharesAfter));
+  setField("price", typeof signal.price === "number" ? `$${signal.price.toFixed(2)}` : "N/A");
+  setField("shares-after", typeof signal.sharesAfter === "number" ? whole.format(signal.sharesAfter) : "N/A");
   setField("strength", `${signal.strength}/100`);
   setField("context", signal.context);
   setField("caveat", signal.caveat);
@@ -186,7 +216,8 @@ function renderSignals() {
   const query = searchInput.value.trim().toLowerCase();
   const filtered = signals.filter((signal) => {
     const matchesQuery = `${signal.ticker} ${signal.company} ${signal.insider}`.toLowerCase().includes(query);
-    const matchesMove = moveFilter === "all" || (moveFilter === "up" ? signal.move5d >= 0 : signal.move5d < 0);
+    const hasMove = typeof signal.move5d === "number";
+    const matchesMove = moveFilter === "all" || (hasMove && (moveFilter === "up" ? signal.move5d >= 0 : signal.move5d < 0));
     return matchesQuery && matchesMove;
   });
 
@@ -199,12 +230,13 @@ function renderSignals() {
     button.dataset.ticker = signal.ticker;
     button.setAttribute("aria-pressed", String(selectedTicker === signal.ticker));
     const position = signal.positionChange === null ? "N/A" : `+${signal.positionChange.toFixed(1)}%`;
-    const move = `${signal.move5d >= 0 ? "+" : ""}${signal.move5d.toFixed(1)}%`;
+    const hasMove = typeof signal.move5d === "number";
+    const move = hasMove ? `${signal.move5d >= 0 ? "+" : ""}${signal.move5d.toFixed(1)}%` : "N/A";
     button.innerHTML = `
-      <span class="company-cell"><i>${signal.ticker.slice(0, 2)}</i><span><b>${signal.ticker} · ${signal.company}</b><small>${signal.insider}, ${signal.role}</small></span></span>
+      <span class="company-cell"><i>${escapeHtml(signal.ticker.slice(0, 2))}</i><span><b>${escapeHtml(signal.ticker)} · ${escapeHtml(signal.company)}</b><small>${escapeHtml(signal.insider)}, ${escapeHtml(signal.role)}</small></span></span>
       <span><b>${compactMoney.format(signal.value)}</b><small>${whole.format(signal.shares)} shares</small></span>
       <span><b>${position}</b><small>reported change</small></span>
-      <span class="${signal.move5d >= 0 ? "positive" : "negative"}"><b>${move}</b><small>next 5 sessions</small></span>
+      <span class="${!hasMove ? "pending" : signal.move5d >= 0 ? "positive" : "negative"}"><b>${move}</b><small>${hasMove ? "next 5 sessions" : "outcome pending"}</small></span>
       <span class="score-chip">${signal.strength}</span>`;
     button.addEventListener("click", () => renderContext(signal));
     signalRows.append(button);
@@ -253,12 +285,102 @@ trustLeaders.forEach((leader, index) => {
 });
 
 const marketMoves = document.querySelector("#market-moves");
-[...signals].sort((a, b) => Math.abs(b.move5d) - Math.abs(a.move5d)).slice(0, 3).forEach((signal) => {
-  const row = document.createElement("div");
-  row.className = "move";
-  row.innerHTML = `<span class="move-ticker">${signal.ticker}</span><span><b>${signal.company}</b><small>${compactMoney.format(signal.value)} disclosed purchase</small></span><strong class="${signal.move5d >= 0 ? "positive" : "negative"}">${signal.move5d >= 0 ? "+" : ""}${signal.move5d.toFixed(1)}%</strong>`;
-  marketMoves.append(row);
-});
+
+function renderEditionSignals(items, weekly = false) {
+  marketMoves.replaceChildren();
+  if (!items.length) {
+    const empty = document.createElement("p");
+    empty.className = "edition-empty";
+    empty.textContent = "No qualifying new transactions were recorded for this edition.";
+    marketMoves.append(empty);
+    return;
+  }
+  const ranked = weekly ? items : [...items].filter((item) => typeof item.move5d === "number").sort((a, b) => Math.abs(b.move5d) - Math.abs(a.move5d)).slice(0, 3);
+  ranked.slice(0, 5).forEach((signal) => {
+    const row = document.createElement("a");
+    row.className = "move";
+    row.href = signal.source;
+    row.target = "_blank";
+    row.rel = "noreferrer";
+    const outcome = weekly ? `${signal.strength ?? 0}/100` : `${signal.move5d >= 0 ? "+" : ""}${signal.move5d.toFixed(1)}%`;
+    row.innerHTML = `<span class="move-ticker">${escapeHtml(signal.ticker)}</span><span><b>${escapeHtml(signal.company)}</b><small>${compactMoney.format(signal.value)} disclosed purchase</small></span><strong class="${weekly || signal.move5d >= 0 ? "positive" : "negative"}">${escapeHtml(outcome)}</strong>`;
+    marketMoves.append(row);
+  });
+}
+
+function renderBriefList(targetId, items, renderer) {
+  const target = document.querySelector(targetId);
+  target.replaceChildren();
+  if (!items.length) {
+    const empty = document.createElement("p");
+    empty.className = "brief-empty";
+    empty.textContent = "No qualifying records in this edition.";
+    target.append(empty);
+    return;
+  }
+  items.slice(0, 3).forEach((item) => target.append(renderer(item)));
+}
+
+function linkedBriefRow(item, detail, value) {
+  const row = document.createElement("a");
+  row.className = "brief-row";
+  row.href = item.source;
+  row.target = "_blank";
+  row.rel = "noreferrer";
+  row.innerHTML = `<span><b>${escapeHtml(item.ticker || item.accession)}</b><small>${escapeHtml(detail)}</small></span><strong>${escapeHtml(value)}</strong>`;
+  return row;
+}
+
+async function loadStageOneData() {
+  try {
+    const response = await fetch("./data/signals.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`signal data returned ${response.status}`);
+    const data = await response.json();
+    const purchases = (data.transactions || []).filter((record) => record.side === "BUY").map(recordToSignal);
+    if (purchases.length) {
+      signals = purchases;
+      selectedTicker = signals[0].ticker;
+    }
+    const status = data.automation?.status === "active" ? "Automation active" : "Automation scheduled";
+    document.querySelector("#automation-status").textContent = status;
+    document.querySelector("#automation-note").textContent = data.automation?.note || "Nightly SEC updates are enabled.";
+    document.querySelector("#hero-signal-count").textContent = whole.format(data.stats?.purchases ?? purchases.length);
+    document.querySelector("#data-freshness").innerHTML = `<i></i> Last SEC check ${displayDate(data.lastCheckedDate)}`;
+    document.querySelector("#signal-source-note").textContent = `Public SEC records through ${displayDate(data.lastCheckedDate)}. Automated records show N/A until market outcomes mature.`;
+  } catch (error) {
+    console.warn("PlainSight is using its archived fallback data.", error);
+    document.querySelector("#automation-status").textContent = "Archived fallback";
+  }
+  renderSignals();
+  renderContext(signals[0]);
+
+  try {
+    const response = await fetch("./data/weekly/latest.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`weekly data returned ${response.status}`);
+    const weekly = await response.json();
+    document.querySelector("#weekly-period").textContent = `${displayDate(weekly.periodStart)}–${displayDate(weekly.periodEnd)}`;
+    document.querySelector("#weekly-lead").textContent = weekly.lead;
+    document.querySelector("#weekly-purchase-count").textContent = whole.format(weekly.counts?.qualifyingPurchases ?? 0);
+    document.querySelector("#weekly-sale-count").textContent = whole.format(weekly.counts?.notableSales ?? 0);
+    document.querySelector("#weekly-cluster-count").textContent = whole.format(weekly.counts?.clusters ?? 0);
+    document.querySelector("#weekly-review-count").textContent = whole.format(weekly.counts?.reviewNeeded ?? 0);
+    renderEditionSignals((weekly.strongestBuys || []).map(recordToSignal), true);
+    renderBriefList("#weekly-sales", weekly.notableSales || [], (item) => linkedBriefRow(item, item.company, compactMoney.format(item.value)));
+    renderBriefList("#weekly-warnings", weekly.reviewNeeded || [], (item) => linkedBriefRow(item, item.reason, "Review ↗"));
+    renderBriefList("#weekly-clusters", weekly.clusters || [], (item) => {
+      const row = document.createElement("div");
+      row.className = "brief-row";
+      row.innerHTML = `<span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.insiderCount)} disclosed insiders · ${escapeHtml(item.company)}</small></span><strong>${compactMoney.format(item.combinedValue)}</strong>`;
+      return row;
+    });
+  } catch (error) {
+    console.warn("Weekly preview is not available; archived moves remain visible.", error);
+    renderEditionSignals(signals, false);
+    renderBriefList("#weekly-sales", [], () => document.createElement("span"));
+    renderBriefList("#weekly-clusters", [], () => document.createElement("span"));
+    renderBriefList("#weekly-warnings", [], () => document.createElement("span"));
+  }
+}
 
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 if (!reducedMotion && "IntersectionObserver" in window) {
@@ -275,5 +397,4 @@ if (!reducedMotion && "IntersectionObserver" in window) {
   document.querySelectorAll(".reveal").forEach((element) => element.classList.add("is-visible"));
 }
 
-renderSignals();
-renderContext(signals[0]);
+loadStageOneData();
