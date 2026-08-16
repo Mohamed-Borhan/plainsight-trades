@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PlainSight | Public Trade Intelligence</title>
+    <meta name="description" content="PlainSight adds context to public SEC insider filings and official congressional trade disclosures. Research only—never automatic trading.">
+    <meta name="author" content="Mohamed Borhan">
+    <meta name="theme-color" content="#102d2b">
+    <link rel="canonical" href="https://mohamed-borhan.github.io/plainsight-trades/">
+    <link rel="stylesheet" href="styles.css">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="PlainSight | Public Trade Intelligence">
+    <meta property="og:description" content="Public filings, ranked signals, and the context behind every trade.">
+    <meta property="og:url" content="https://mohamed-borhan.github.io/plainsight-trades/">
+    <meta property="og:image" content="https://mohamed-borhan.github.io/plainsight-trades/assets/og.png">
+    <meta property="og:image:alt" content="PlainSight Public Trade Intelligence">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PlainSight | Public Trade Intelligence">
+    <meta name="twitter:description" content="Public filings, ranked signals, and the context behind every trade.">
+    <meta name="twitter:image" content="https://mohamed-borhan.github.io/plainsight-trades/assets/og.png">
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "PlainSight Public Trade Intelligence",
+        "url": "https://mohamed-borhan.github.io/plainsight-trades/",
+        "description": "Research interface for public SEC insider filings and official congressional trade disclosures.",
+        "creator": {
+          "@type": "Person",
+          "name": "Mohamed Borhan",
+          "url": "https://mohamed-borhan.github.io/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to research</a>
+    <header class="topbar" id="top">
+      <a class="brand" href="#top" aria-label="PlainSight home">
+        <span class="brand-mark">P</span>
+        <span><b>PlainSight</b><small>Public trade intelligence</small></span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#signals">Signals</a>
+        <a href="#congress">Congress</a>
+        <a href="#trust">Trust board</a>
+        <a href="#method">Method</a>
+      </nav>
+      <a class="button button-small" href="#brief">Weekly brief <span aria-hidden="true">→</span></a>
+    </header>
+
+    <main id="main">
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="status-pill"><i></i> Public filings only · no order execution</div>
+          <h1>Know what changed.<br><em>Understand why it matters.</em></h1>
+          <p>PlainSight organizes SEC insider filings and official congressional disclosures into an evidence-weighted research view—ranking conviction, tracking outcomes, and keeping the caveats beside every signal.</p>
+          <div class="hero-actions">
+            <a class="button" href="#signals">Explore the research <span aria-hidden="true">↘</span></a>
+            <a class="text-link" href="#method">Read the method <span aria-hidden="true">→</span></a>
+          </div>
+          <p class="snapshot"><b>Research demo:</b> archived snapshot through June 2026. Not live market data.</p>
+        </div>
+        <aside class="hero-card" aria-label="Research snapshot">
+          <div class="card-kicker"><span>Current edition</span><b>Public data</b></div>
+          <div class="hero-number">6</div>
+          <p>qualifying corporate purchase examples with filing context and official-source links</p>
+          <div class="metric-grid">
+            <div><strong>4</strong><span>political records</span><small>House examples</small></div>
+            <div><strong>0</strong><span>broker orders</span><small>research stays separate</small></div>
+          </div>
+          <span class="card-note">Filings can arrive after the trade. Historical outcomes do not predict future returns.</span>
+        </aside>
+      </section>
+
+      <section class="ticker-strip" aria-label="Research principles">
+        <span>THE RESEARCH LENS</span><b>Open-market purchases</b><i></i><b>Position-size changes</b><i></i><b>House + Senate PTRs</b><i></i><b>Post-filing moves</b><i></i><b>Rolling signal history</b>
+      </section>
+
+      <section class="section reveal" id="signals">
+        <div class="section-heading split-heading">
+          <div>
+            <span class="eyebrow">Signal ledger</span>
+            <h2>Strongest disclosed buys</h2>
+            <p>Archived research examples from official SEC filings. Search or filter the ledger, then open a record for its context and caveats.</p>
+          </div>
+          <div class="freshness"><i></i> Snapshot through June 2026</div>
+        </div>
+
+        <div class="workbench">
+          <div class="signal-list">
+            <div class="toolbar">
+              <label class="search">
+                <span aria-hidden="true">⌕</span>
+                <input id="signal-search" type="search" placeholder="Search company or insider" autocomplete="off" aria-label="Search company or insider">
+              </label>
+              <div class="segmented" aria-label="Filter by five-day move">
+                <button class="active" type="button" data-filter="all">All</button>
+                <button type="button" data-filter="up">Moved up</button>
+                <button type="button" data-filter="down">Moved down</button>
+              </div>
+            </div>
+            <div class="table-head" aria-hidden="true"><span>Company / insider</span><span>Trade</span><span>Position</span><span>5-day move</span><span>Strength</span></div>
+            <div id="signal-rows"></div>
+            <div class="empty" id="signal-empty" hidden>No signals match those filters.</div>
+          </div>
+
+          <aside class="context-panel" id="signal-context" aria-live="polite">
+            <div class="context-top"><span class="ticker-badge" data-field="ticker"></span><span class="filed" data-field="filed"></span></div>
+            <h3 data-field="company"></h3>
+            <p class="insider-line" data-field="insider"></p>
+            <div class="meter-wrap" data-field="meter-wrap">
+              <div class="meter"><div class="meter-core"><span data-field="trust-score"></span><small>/100</small></div></div>
+              <div><span class="eyebrow">Signal trust</span><strong data-field="trust-status"></strong></div>
+            </div>
+            <p class="meter-caption" data-field="trust-caption"></p>
+            <div class="context-stats">
+              <div><span>Cash deployed</span><b data-field="value"></b></div>
+              <div><span>Reported price</span><b data-field="price"></b></div>
+              <div><span>Shares after</span><b data-field="shares-after"></b></div>
+              <div><span>Signal strength</span><b data-field="strength"></b></div>
+            </div>
+            <div class="explain good"><span>Why it stands out</span><p data-field="context"></p></div>
+            <div class="explain watch"><span>What could weaken it</span><p data-field="caveat"></p></div>
+            <a class="source-link" data-field="source" target="_blank" rel="noreferrer">Open official SEC search <span aria-hidden="true">↗</span></a>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section congress-section reveal" id="congress">
+        <div class="section-heading split-heading">
+          <div>
+            <span class="eyebrow">Congressional disclosure tracker</span>
+            <h2>Follow the filings—not the headlines.</h2>
+            <p>Political disclosures stay separate from corporate Form 4 signals because they report value ranges, may involve family accounts, and can become public weeks after the trade.</p>
+          </div>
+          <div class="delay-chip"><b>Up to 45 days</b><span>legal disclosure window</span></div>
+        </div>
+
+        <div class="congress-kpis">
+          <div><strong>2</strong><span>chambers</span><small>House + Senate</small></div>
+          <div><strong>&gt;$1K</strong><span>reporting threshold</span><small>covered transactions</small></div>
+          <div><strong>Range</strong><span>reported value</span><small>never false precision</small></div>
+          <div><strong>Filed</strong><span>follower entry</span><small>no look-ahead bias</small></div>
+        </div>
+
+        <div class="congress-grid">
+          <div class="political-ledger">
+            <div class="political-head"><span>Official filing examples</span><small>Open the source for every record</small></div>
+            <div id="political-rows"></div>
+            <p class="source-disclaimer">These are research records from official disclosures. A disclosure is not evidence of wrongdoing, and a reported range is not an exact trade value or a complete portfolio view.</p>
+          </div>
+          <aside class="political-score-card">
+            <span class="eyebrow">Political follower score</span>
+            <h3>Public performance, graded honestly.</h3>
+            <div class="meter-wrap">
+              <div class="meter unscored"><div class="meter-core"><span>—</span><small>/100</small></div></div>
+              <div><span class="eyebrow">Follower score</span><strong>Unscored</strong></div>
+            </div>
+            <p>This measures what a public follower could have earned after disclosure—not a politician's private return. New filers remain unscored until enough trades mature.</p>
+            <ul>
+              <li><b>Delay penalty</b><span>Entry begins after filing</span></li>
+              <li><b>Ownership label</b><span>Self, spouse, or dependent</span></li>
+              <li><b>Range confidence</b><span>Estimates stay labeled</span></li>
+              <li><b>Benchmark</b><span>S&amp;P 500 and Nasdaq</span></li>
+            </ul>
+            <div class="source-pair">
+              <a href="https://disclosures-clerk.house.gov/FinancialDisclosure/ViewReport" target="_blank" rel="noreferrer">House Clerk ↗</a>
+              <a href="https://efdsearch.senate.gov/search/home/" target="_blank" rel="noreferrer">Senate eFD ↗</a>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section dark-section reveal" id="trust">
+        <div class="section-heading split-heading">
+          <div>
+            <span class="eyebrow">Prototype Corporate Insider Trust Board</span>
+            <h2>History earns the score.</h2>
+            <p>These illustrative model outputs come from the archived research snapshot. The meter grades a disclosed-signal track record—not a person's honesty, character, or access to information. Political disclosures use a separate follower score.</p>
+          </div>
+          <div class="method-chip">Archived model output · not independently validated</div>
+        </div>
+        <div class="trust-layout">
+          <div class="leaderboard" id="trust-leaders"></div>
+          <div class="trust-explainer">
+            <span class="eyebrow">Trust Meter · v1</span>
+            <div class="meter-wrap">
+              <div class="meter example"><div class="meter-core"><span>65</span><small>/100</small></div></div>
+              <div><span class="eyebrow">Example score</span><strong>Established</strong></div>
+            </div>
+            <ol>
+              <li><b>Performance</b><span>Excess return vs. benchmark</span><strong>65%</strong></li>
+              <li><b>Consistency</b><span>Positive signal hit rate</span><strong>20%</strong></li>
+              <li><b>Sample</b><span>Confidence from mature records</span><strong>15%</strong></li>
+            </ol>
+            <p>Scores shrink toward neutral when samples are small. N/A means the public record does not support a reliable calculation.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section reveal" id="edition">
+        <div class="section-heading split-heading">
+          <div><span class="eyebrow">Weekly research edition</span><h2>Moves with the filing context intact.</h2><p>The largest five-session moves in this archived example set—shown as outcomes, not recommendations.</p></div>
+          <div class="freshness">Example edition · June 2026</div>
+        </div>
+        <div class="edition-grid">
+          <article class="lead-story">
+            <div class="edition-meta"><span>PlainSight research note</span><b>Signal ≠ instruction</b></div>
+            <span class="story-tag">Lead context</span>
+            <h3>Size matters most when it changes the insider's position.</h3>
+            <p>A large dollar purchase can look impressive while adding little to an already-large holding. PlainSight keeps reported position change, role, clusters, and historical sample size beside the headline value.</p>
+            <a href="#method">Review the scoring framework →</a>
+          </article>
+          <div class="move-stack">
+            <div class="move-title"><span>Largest snapshot moves</span><small>Five sessions after filing</small></div>
+            <div id="market-moves"></div>
+            <div class="benchmark-note"><b>Benchmark before celebration</b><span>Every backtest should compare the same dates against the S&amp;P 500 and Nasdaq, including filing delay and realistic entry timing.</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="method-section" id="method">
+        <div class="method-inner reveal">
+          <div>
+            <span class="eyebrow">Methodology</span>
+            <h2>A filing is evidence.<br>It is not a forecast.</h2>
+          </div>
+          <div class="method-grid">
+            <article><span>01</span><h3>Filter the transaction</h3><p>Corporate signals focus on direct, non-derivative, open-market common-stock purchases. Grants, gifts, exercises, withholding, derivatives, and ambiguous ownership stay out of the ranked list.</p></article>
+            <article><span>02</span><h3>Score conviction</h3><p>Transaction size, estimated position change, senior role, repeat or cluster activity, and mature follower history contribute to a transparent research score.</p></article>
+            <article><span>03</span><h3>Respect publication time</h3><p>Backtests enter only after information is public. Congressional analysis separately accounts for ranges, ownership labels, and the legal reporting delay.</p></article>
+            <article><span>04</span><h3>Benchmark the outcome</h3><p>Measure the same holding window against broad-market benchmarks, include losing signals, and keep low-sample results close to neutral.</p></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="newsletter reveal" id="brief">
+        <div>
+          <span class="eyebrow">Weekly public-filings brief</span>
+          <h2>Get the context—not a trade alert.</h2>
+          <p>Request a concise weekly research summary covering notable public insider purchases, sales, political disclosures, clusters, amendments, and data-quality warnings.</p>
+        </div>
+        <div class="brief-action">
+          <a class="button" href="mailto:mohammedborhan0480@gmail.com?subject=PlainSight%20Weekly%20Brief">Request the weekly brief <span aria-hidden="true">↗</span></a>
+          <small>This static site does not collect or store email addresses.</small>
+        </div>
+      </section>
+
+      <section class="risk-note" aria-labelledby="risk-title">
+        <div><span class="eyebrow">Research and risk notes</span><h2 id="risk-title">Use the filing. Keep the skepticism.</h2></div>
+        <div>
+          <p>PlainSight uses already-public information from official filings. It does not use or facilitate material nonpublic information, execute trades, or connect to a broker.</p>
+          <p>Filings are delayed, reported ownership can be incomplete, sales may reflect taxes or diversification, political disclosures often use ranges, and past performance does not guarantee future results. This site is educational research—not financial, legal, or investment advice.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <a class="brand" href="#top"><span class="brand-mark">P</span><span><b>PlainSight</b><small>Public trade intelligence</small></span></a>
+      <p>Public filings only · research, not financial advice · no order execution</p>
+      <span>Built by <a href="https://mohamed-borhan.github.io/">Mohamed Borhan</a></span>
+    </footer>
+
+    <script src="script.js" defer></script>
+  </body>
+</html>
