@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-16T11:38:52Z",
+  "generatedAt": "2026-08-16T11:54:51Z",
   "lastCheckedDate": "2026-08-16",
   "automation": {
     "stage": 1,
@@ -25,7 +25,7 @@
     "purchases": 44,
     "sales": 174,
     "reviewNeeded": 23,
-    "newThisRun": 212,
+    "newThisRun": 0,
     "indexDaysChecked": 2
   },
   "transactions": [
