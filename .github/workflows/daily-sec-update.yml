@@ -1,0 +1,57 @@
+name: Daily SEC update
+
+on:
+  schedule:
+    - cron: "20 22 * * 1-5"
+      timezone: "America/New_York"
+  workflow_dispatch:
+    inputs:
+      lookback_days:
+        description: "Number of overlap days to recheck"
+        required: false
+        default: "4"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: plainsight-data-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SEC_USER_AGENT: "PlainSight public filing research mohammedborhan0480@gmail.com"
+    steps:
+      - name: Check out the website
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Test the filing parser
+        run: python -m unittest discover -s tests -v
+
+      - name: Collect new public Form 4 filings
+        env:
+          LOOKBACK_DAYS: ${{ inputs.lookback_days || '4' }}
+        run: python scripts/update_sec.py --lookback-days "$LOOKBACK_DAYS"
+
+      - name: Validate the published data
+        run: python scripts/validate_data.py
+
+      - name: Publish updated data
+        run: |
+          git config user.name "PlainSight Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/signals.json data/state.json
+          if git diff --cached --quiet; then
+            echo "No data changes to publish."
+            exit 0
+          fi
+          git commit -m "Update public SEC filing data $(date -u +%F)"
+          git push

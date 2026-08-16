@@ -1,0 +1,57 @@
+name: Weekly on-site brief
+
+on:
+  schedule:
+    - cron: "15 9 * * 6"
+      timezone: "America/New_York"
+  workflow_dispatch:
+    inputs:
+      as_of:
+        description: "Optional edition date (YYYY-MM-DD)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: plainsight-data-update
+  cancel-in-progress: false
+
+jobs:
+  publish-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the website
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Build the weekly preview
+        env:
+          EDITION_DATE: ${{ inputs.as_of }}
+        run: |
+          if [ -n "$EDITION_DATE" ]; then
+            python scripts/build_weekly.py --as-of "$EDITION_DATE"
+          else
+            python scripts/build_weekly.py
+          fi
+
+      - name: Validate the published data
+        run: python scripts/validate_data.py
+
+      - name: Publish the weekly preview
+        run: |
+          git config user.name "PlainSight Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/weekly
+          if git diff --cached --quiet; then
+            echo "No weekly preview changes to publish."
+            exit 0
+          fi
+          git commit -m "Publish weekly PlainSight preview $(date -u +%F)"
+          git push
