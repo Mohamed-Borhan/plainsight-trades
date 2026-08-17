@@ -23,6 +23,7 @@ PlainSight is a public-filings research interface that adds context to SEC insid
 - A second workflow generates an on-site weekly preview every Saturday.
 - The weekly newsletter remains explicitly labeled as a work in progress while the project collects enough validated history for more meaningful rankings and grades.
 - Email collection and email delivery are disabled during Stage 1.
+- Structured public feedback, beta-tester interest, roadmap votes, and data-quality reports are collected through free GitHub issue forms. Visitors are reminded not to submit private or sensitive information.
 
 Both workflows can also be started manually from the repository's Actions page. The collector uses only Python's standard library, identifies itself to the SEC, caches processed accessions, and stays below the SEC's published fair-access request limit.
 

@@ -122,7 +122,7 @@ button { color: inherit; }
   transform: translateY(-2px);
 }
 .button-small { min-height: 40px; padding: 0 15px; font-size: 12px; }
-.text-link, .source-link {
+.text-link, .source-link, .report-link {
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -364,8 +364,10 @@ button { color: inherit; }
 .explain { margin-top: 15px; padding: 12px 14px; border-left: 3px solid var(--green); border-radius: 0 8px 8px 0; background: rgba(78,155,121,.08); }
 .explain.watch { border-left-color: #d0a64b; background: rgba(208,166,75,.08); }
 .explain p { margin: 4px 0 0; color: #53605a; font-size: 10px; line-height: 1.55; }
-.source-link { margin-top: 20px; color: var(--deep); font-size: 11px; }
-.source-link:hover { color: var(--green); }
+.context-links { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: 20px; }
+.source-link, .report-link { color: var(--deep); font-size: 11px; }
+.source-link:hover, .report-link:hover { color: var(--green); }
+.report-link { color: var(--muted); }
 
 .congress-section { background: #ede9dd; }
 .delay-chip { display: grid; min-width: 155px; padding: 16px 20px; background: var(--deep); border-radius: 12px; color: var(--white); }
@@ -472,6 +474,40 @@ a.brief-row:hover b { color: var(--green); }
 .newsletter p { max-width: 670px; color: rgba(255,255,255,.58); }
 .brief-action { display: grid; gap: 12px; justify-items: start; }
 .brief-action small { color: rgba(255,255,255,.42); font-size: 9px; }
+.feedback-section { padding: clamp(86px, 10vw, 145px) clamp(22px, 6vw, 100px); background: #e7ecdc; }
+.feedback-intro { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 48px; align-items: end; margin-bottom: 46px; }
+.feedback-intro > .eyebrow, .feedback-intro h2, .feedback-intro p, .feedback-intro .feedback-note { grid-column: 1; }
+.feedback-intro h2 { max-width: 820px; margin: 10px 0 15px; font-family: var(--serif); font-size: clamp(39px, 5vw, 67px); font-weight: 400; letter-spacing: -.045em; line-height: 1; }
+.feedback-intro p { max-width: 720px; margin: 0; color: var(--muted); }
+.feedback-actions { grid-column: 2; grid-row: 1 / span 4; display: grid; gap: 13px; align-self: center; justify-items: start; }
+.feedback-text-link { color: var(--deep); }
+.feedback-text-link:hover { color: var(--green); }
+.feedback-note { display: block; max-width: 720px; margin-top: 15px; color: var(--muted); font-size: 9px; }
+.feedback-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.feedback-card, .roadmap-card, .changelog-card { border: 1px solid var(--line); border-radius: 18px; background: var(--white); box-shadow: 0 15px 50px rgba(17,37,35,.05); }
+.feedback-card { display: grid; grid-template-columns: auto 1fr; gap: 22px; min-height: 240px; padding: 28px; }
+.feedback-card .card-number { display: grid; width: 40px; height: 40px; place-items: center; color: var(--deep); background: var(--lime); border-radius: 10px 10px 3px 10px; font-size: 10px; font-weight: 900; }
+.feedback-card h3, .roadmap-card h3, .changelog-card h3 { margin: 7px 0 8px; font-family: var(--serif); font-size: 28px; font-weight: 400; line-height: 1.05; }
+.feedback-card p { margin: 0; color: var(--muted); font-size: 11px; }
+.feedback-card > a { grid-column: 2; align-self: end; color: var(--green); font-size: 11px; font-weight: 900; }
+.featured-feedback-card { color: var(--white); background: var(--deep); }
+.featured-feedback-card .eyebrow, .featured-feedback-card > a { color: var(--lime); }
+.featured-feedback-card p { color: rgba(255,255,255,.56); }
+.roadmap-card { grid-column: 1; padding: 28px; }
+.roadmap-heading { display: flex; justify-content: space-between; gap: 24px; align-items: end; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.roadmap-heading a { color: var(--green); font-size: 10px; font-weight: 900; white-space: nowrap; }
+.roadmap-list, .changelog-card ol { margin: 0; padding: 0; list-style: none; }
+.roadmap-list li { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 13px 0; border-bottom: 1px solid var(--line); }
+.roadmap-list li:last-child { border-bottom: 0; }
+.roadmap-list span, .roadmap-list small { color: var(--muted); font-size: 8px; }
+.roadmap-list b { font-size: 10px; }
+.roadmap-list small { text-align: right; }
+.changelog-card { grid-column: 2; padding: 28px; }
+.changelog-card > h3 { margin-bottom: 21px; }
+.changelog-card li { display: grid; grid-template-columns: 54px 1fr; gap: 14px; padding: 15px 0; border-top: 1px solid var(--line); }
+.changelog-card time { color: var(--green); font-size: 9px; font-weight: 900; text-transform: uppercase; }
+.changelog-card b { font-size: 10px; }
+.changelog-card p { margin: 3px 0 0; color: var(--muted); font-size: 9px; }
 .risk-note { display: grid; grid-template-columns: .8fr 1.2fr; gap: 70px; padding: clamp(70px, 8vw, 110px) clamp(22px, 7vw, 120px); background: var(--paper-2); }
 .risk-note h2 { font-size: clamp(36px, 4vw, 56px); }
 .risk-note p { color: var(--muted); font-size: 12px; }
@@ -496,7 +532,7 @@ footer a { color: rgba(255,255,255,.9); }
   .workbench { grid-template-columns: 1fr; }
   .context-panel { position: relative; top: 0; display: grid; grid-template-columns: .7fr 1.3fr; column-gap: 24px; }
   .context-top, .context-panel h3, .insider-line, .meter-wrap, .meter-caption { grid-column: 1; }
-  .context-stats, .explain, .source-link { grid-column: 2; }
+  .context-stats, .explain, .context-links { grid-column: 2; }
   .context-stats { grid-row: 1 / span 4; margin: 0; }
   .congress-grid, .trust-layout { grid-template-columns: 1fr; }
   .political-score-card { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 30px; }
@@ -510,7 +546,7 @@ footer a { color: rgba(255,255,255,.9); }
   .hero { grid-template-columns: 1fr; min-height: auto; padding: 80px 22px; }
   .hero-card { max-width: 520px; }
   .ticker-strip { gap: 16px; }
-  .split-heading, .method-inner, .newsletter, .risk-note, .edition-grid, .edition-details { grid-template-columns: 1fr; }
+  .split-heading, .method-inner, .newsletter, .risk-note, .edition-grid, .edition-details, .feedback-intro, .feedback-grid { grid-template-columns: 1fr; }
   .split-heading { align-items: start; }
   .freshness, .delay-chip, .method-chip { justify-self: start; }
   .toolbar { align-items: stretch; flex-direction: column; }
@@ -531,6 +567,8 @@ footer a { color: rgba(255,255,255,.9); }
   .leader-stat { display: none; }
   .method-grid { grid-template-columns: 1fr; }
   .newsletter, .risk-note { gap: 28px; }
+  .feedback-actions { grid-column: 1; grid-row: auto; margin-top: 24px; }
+  .feedback-card, .roadmap-card, .changelog-card { grid-column: 1; }
   footer { grid-template-columns: 1fr; text-align: center; }
   footer .brand, footer > span { justify-self: center; }
   footer > p { margin: 0; }
@@ -547,6 +585,10 @@ footer a { color: rgba(255,255,255,.9); }
   .source-pair { grid-template-columns: 1fr; }
   .congress-kpis strong { font-size: 25px; }
   .weekly-counts { grid-template-columns: 1fr 1fr; }
+  .feedback-card { grid-template-columns: 1fr; }
+  .feedback-card > a { grid-column: 1; }
+  .roadmap-list li { grid-template-columns: 25px 1fr; }
+  .roadmap-list small { grid-column: 2; text-align: left; }
 }
 
 @media (prefers-reduced-motion: reduce) {

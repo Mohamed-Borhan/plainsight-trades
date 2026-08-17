@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Open PlainSight
+    url: https://mohamed-borhan.github.io/plainsight-trades/
+    about: Review the live public-filings research dashboard before opening an issue.
