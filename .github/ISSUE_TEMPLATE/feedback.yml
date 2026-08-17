@@ -1,0 +1,71 @@
+name: PlainSight feedback
+description: Share what helped, what was confusing, and what PlainSight should improve next.
+title: "[Feedback] "
+labels:
+  - feedback
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve PlainSight. This response will be public. Please do not include private, financial, or sensitive information.
+  - type: dropdown
+    id: visitor
+    attributes:
+      label: What brought you to PlainSight?
+      options:
+        - Learning about public trade disclosures
+        - Researching insider filings
+        - Researching congressional disclosures
+        - Exploring a student data project
+        - Reviewing the site as a developer or tester
+        - Something else
+    validations:
+      required: true
+  - type: dropdown
+    id: useful
+    attributes:
+      label: Which part was most useful?
+      options:
+        - SEC signal ledger
+        - Filing context panel
+        - Congressional disclosure tracker
+        - Trust Meter prototype
+        - Weekly preview
+        - Methodology and risk notes
+        - Nothing stood out yet
+    validations:
+      required: true
+  - type: textarea
+    id: confusing
+    attributes:
+      label: What felt confusing, incomplete, or missing?
+      placeholder: A short example is helpful.
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: What should PlainSight improve next?
+      description: This is your roadmap vote.
+      options:
+        - Historical performance and benchmarks
+        - Better filters and search
+        - Trust Meter improvements
+        - Political trade updates
+        - Weekly newsletter
+        - Mobile experience
+    validations:
+      required: true
+  - type: checkboxes
+    id: beta
+    attributes:
+      label: Beta testing
+      options:
+        - label: I would like to test future PlainSight updates through GitHub.
+  - type: checkboxes
+    id: public
+    attributes:
+      label: Public response check
+      options:
+        - label: I understand this feedback is public and contains no private or sensitive information.
+          required: true

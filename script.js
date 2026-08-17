@@ -205,6 +205,12 @@ function renderContext(signal) {
   meter.classList.toggle("unscored", signal.trust === null);
   const source = document.querySelector('[data-field="source"]');
   source.href = signal.source;
+  const report = document.querySelector('[data-field="report"]');
+  const reportTitle = signal.accession
+    ? `[Data review] ${signal.ticker} · ${signal.accession}`
+    : `[Data review] ${signal.ticker} · ${signal.company}`;
+  const reportQuery = new URLSearchParams({ template: "data-issue.yml", title: reportTitle });
+  report.href = `https://github.com/Mohamed-Borhan/plainsight-trades/issues/new?${reportQuery.toString()}`;
 
   document.querySelectorAll(".signal-row").forEach((row) => {
     row.classList.toggle("selected", row.dataset.ticker === signal.ticker);

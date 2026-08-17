@@ -46,6 +46,7 @@
         <a href="#congress">Congress</a>
         <a href="#trust">Trust board</a>
         <a href="#method">Method</a>
+        <a href="#feedback">Feedback</a>
       </nav>
       <a class="button button-small" href="#brief">Weekly brief <span aria-hidden="true">→</span></a>
     </header>
@@ -123,7 +124,10 @@
             </div>
             <div class="explain good"><span>Why it stands out</span><p data-field="context"></p></div>
             <div class="explain watch"><span>What could weaken it</span><p data-field="caveat"></p></div>
-            <a class="source-link" data-field="source" target="_blank" rel="noreferrer">Open official SEC search <span aria-hidden="true">↗</span></a>
+            <div class="context-links">
+              <a class="source-link" data-field="source" target="_blank" rel="noreferrer">Open official SEC filing <span aria-hidden="true">↗</span></a>
+              <a class="report-link" data-field="report" target="_blank" rel="noreferrer">Report a data issue <span aria-hidden="true">↗</span></a>
+            </div>
           </aside>
         </div>
       </section>
@@ -268,6 +272,66 @@
         </div>
       </section>
 
+      <section class="feedback-section" id="feedback">
+        <div class="feedback-intro reveal">
+          <span class="eyebrow">Community feedback</span>
+          <h2>Help shape what PlainSight becomes next.</h2>
+          <p>PlainSight is still developing. A short, structured feedback form makes it easier to learn what is useful, what is confusing, and which improvement should come first.</p>
+          <div class="feedback-actions">
+            <a class="button" href="https://github.com/Mohamed-Borhan/plainsight-trades/issues/new?template=feedback.yml" target="_blank" rel="noreferrer">Share feedback <span aria-hidden="true">↗</span></a>
+            <a class="text-link feedback-text-link" href="https://github.com/Mohamed-Borhan/plainsight-trades/issues?q=is%3Aissue+label%3Afeedback" target="_blank" rel="noreferrer">See public feedback <span aria-hidden="true">→</span></a>
+          </div>
+          <small class="feedback-note">The form opens on GitHub and requires a free GitHub account. Responses are public, so do not include private or sensitive information.</small>
+        </div>
+
+        <div class="feedback-grid reveal">
+          <article class="feedback-card featured-feedback-card">
+            <span class="card-number">01</span>
+            <div>
+              <span class="eyebrow">Four quick questions</span>
+              <h3>Tell me about your experience.</h3>
+              <p>What brought you here? Which section helped? What felt confusing or incomplete? What should improve next?</p>
+            </div>
+            <a href="https://github.com/Mohamed-Borhan/plainsight-trades/issues/new?template=feedback.yml" target="_blank" rel="noreferrer">Open the feedback form →</a>
+          </article>
+
+          <article class="feedback-card">
+            <span class="card-number">02</span>
+            <div>
+              <span class="eyebrow">Beta testing</span>
+              <h3>Try new features early.</h3>
+              <p>Check the beta-tester option in the feedback form. Follow-up stays on GitHub, so PlainSight does not need to collect your email address.</p>
+            </div>
+            <a href="https://github.com/Mohamed-Borhan/plainsight-trades/issues/new?template=feedback.yml" target="_blank" rel="noreferrer">Join through GitHub →</a>
+          </article>
+
+          <article class="roadmap-card">
+            <div class="roadmap-heading">
+              <div><span class="eyebrow">Roadmap vote</span><h3>What should come next?</h3></div>
+              <a href="https://github.com/Mohamed-Borhan/plainsight-trades/issues/new?template=feedback.yml" target="_blank" rel="noreferrer">Cast a vote ↗</a>
+            </div>
+            <ol class="roadmap-list">
+              <li><span>01</span><b>Historical performance</b><small>Benchmark mature signals</small></li>
+              <li><span>02</span><b>Better filters</b><small>Roles, sizes, dates, and clusters</small></li>
+              <li><span>03</span><b>Trust Meter improvements</b><small>More history and clearer confidence</small></li>
+              <li><span>04</span><b>Political trade updates</b><small>Official House and Senate records</small></li>
+              <li><span>05</span><b>Weekly newsletter</b><small>Improve the developing edition</small></li>
+              <li><span>06</span><b>Mobile experience</b><small>Faster research on smaller screens</small></li>
+            </ol>
+          </article>
+
+          <article class="changelog-card">
+            <span class="eyebrow">Public changelog</span>
+            <h3>Built in public.</h3>
+            <ol>
+              <li><time datetime="2026-08-16">Aug 16</time><div><b>Stage 1 automation launched</b><p>Weekday SEC updates and a Saturday research preview are now generated on GitHub.</p></div></li>
+              <li><time datetime="2026-08-16">Aug 16</time><div><b>Newsletter status clarified</b><p>The weekly edition is labeled as a work in progress while more validated history is collected.</p></div></li>
+              <li><time datetime="2026-08-16">Now</time><div><b>Feedback loop opened</b><p>Visitors can suggest improvements, vote on the roadmap, volunteer to test, and flag filing-data problems.</p></div></li>
+            </ol>
+          </article>
+        </div>
+      </section>
+
       <section class="risk-note" aria-labelledby="risk-title">
         <div><span class="eyebrow">Research and risk notes</span><h2 id="risk-title">Use the filing. Keep the skepticism.</h2></div>
         <div>
@@ -279,7 +343,7 @@
 
     <footer>
       <a class="brand" href="#top"><span class="brand-mark">P</span><span><b>PlainSight</b><small>Public trade intelligence</small></span></a>
-      <p>Public filings only · research, not financial advice · no order execution</p>
+      <p>Public filings only · <a href="#feedback">help improve PlainSight</a> · no order execution</p>
       <span>Built by <a href="https://mohamed-borhan.github.io/">Mohamed Borhan</a></span>
     </footer>
 

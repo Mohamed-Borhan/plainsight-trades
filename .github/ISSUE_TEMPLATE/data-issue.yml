@@ -1,0 +1,61 @@
+name: Report a filing data issue
+description: Flag a possible problem in a PlainSight record using an official public source.
+title: "[Data review] "
+labels:
+  - data-review
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form only for public filing data. This report will be public. Do not include material nonpublic, private, or sensitive information.
+  - type: input
+    id: accession
+    attributes:
+      label: SEC accession number
+      description: Copy the accession number from the selected PlainSight record or official SEC filing.
+      placeholder: 0000000000-00-000000
+    validations:
+      required: true
+  - type: input
+    id: ticker
+    attributes:
+      label: Issuer or ticker
+      placeholder: "Example: ABC"
+    validations:
+      required: true
+  - type: dropdown
+    id: problem
+    attributes:
+      label: What looks wrong?
+      options:
+        - Share count
+        - Reported price or dollar value
+        - Insider name or role
+        - Position change or shares held afterward
+        - Duplicate record
+        - Amendment handling
+        - Source link
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: explanation
+    attributes:
+      label: What should be reviewed?
+      description: Explain the mismatch between PlainSight and the official filing.
+    validations:
+      required: true
+  - type: input
+    id: filing
+    attributes:
+      label: Official SEC filing link
+      placeholder: https://www.sec.gov/Archives/...
+    validations:
+      required: true
+  - type: checkboxes
+    id: public
+    attributes:
+      label: Source check
+      options:
+        - label: This report uses public filing information only and contains no private or sensitive information.
+          required: true
