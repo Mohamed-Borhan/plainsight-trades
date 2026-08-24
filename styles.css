@@ -519,6 +519,7 @@ footer a { color: rgba(255,255,255,.9); }
 
 .js .reveal { opacity: 0; transform: translateY(25px); transition: opacity .75s ease, transform .75s ease; }
 .js .reveal.is-visible { opacity: 1; transform: none; }
+.js #signals.reveal { opacity: 1; transform: none; }
 
 .not-found { min-height: 100vh; display: grid; place-items: center; padding: 24px; color: var(--white); background: var(--deep); }
 .not-found main { max-width: 700px; text-align: center; }

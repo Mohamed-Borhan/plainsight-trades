@@ -403,4 +403,6 @@ if (!reducedMotion && "IntersectionObserver" in window) {
   document.querySelectorAll(".reveal").forEach((element) => element.classList.add("is-visible"));
 }
 
+renderSignals();
+renderContext(signals[0]);
 loadStageOneData();
