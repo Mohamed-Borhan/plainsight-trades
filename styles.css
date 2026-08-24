@@ -526,8 +526,19 @@ footer a { color: rgba(255,255,255,.9); }
 .not-found p { margin-bottom: 28px; color: rgba(255,255,255,.6); }
 
 @media (max-width: 1080px) {
-  .topbar { grid-template-columns: 1fr auto; }
-  .topbar nav { display: none; }
+  .topbar { grid-template-columns: 1fr auto auto; }
+  .topbar nav { display: flex; }
+  .topbar nav a:not(:first-child) { display: none; }
+  .topbar nav a:first-child {
+    padding: 8px 13px;
+    color: var(--deep);
+    background: var(--lime);
+    border-radius: 9px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
   .hero { grid-template-columns: 1fr .55fr; gap: 45px; padding-inline: 45px; }
   .workbench { grid-template-columns: 1fr; }
   .context-panel { position: relative; top: 0; display: grid; grid-template-columns: .7fr 1.3fr; column-gap: 24px; }
@@ -541,7 +552,7 @@ footer a { color: rgba(255,255,255,.9); }
 }
 
 @media (max-width: 760px) {
-  .topbar { min-height: 66px; padding: 10px 18px; }
+  .topbar { grid-template-columns: 1fr auto; min-height: 66px; padding: 10px 18px; }
   .topbar .button { display: none; }
   .hero { grid-template-columns: 1fr; min-height: auto; padding: 80px 22px; }
   .hero-card { max-width: 520px; }
