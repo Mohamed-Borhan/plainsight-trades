@@ -135,23 +135,75 @@ const trustLeaders = [
 const compactMoney = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 });
 const whole = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 const readableDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
+const readableDateTime = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
 const signalRows = document.querySelector("#signal-rows");
 const signalEmpty = document.querySelector("#signal-empty");
 const searchInput = document.querySelector("#signal-search");
 const filterButtons = [...document.querySelectorAll("[data-filter]")];
-let selectedTicker = signals[0].ticker;
-let moveFilter = "all";
+const sortSelect = document.querySelector("#ledger-sort");
+const previousPageButton = document.querySelector("#ledger-previous");
+const nextPageButton = document.querySelector("#ledger-next");
+const ledgerPage = document.querySelector("#ledger-page");
+const ledgerResults = document.querySelector("#ledger-results");
+const pageSize = 30;
+let ledgerRecords = [];
+let selectedRecordId = null;
+let recordFilter = "all";
+let sortMode = "newest";
+let currentPage = 1;
 
 function recordToSignal(record) {
   const filedDate = record.filedAt ? new Date(record.filedAt) : null;
+  const validFiledDate = filedDate && !Number.isNaN(filedDate.valueOf());
+  const side = record.side || "BUY";
+  const accession = record.accession || "Archived record";
   return {
     ...record,
-    filed: filedDate && !Number.isNaN(filedDate.valueOf()) ? `Filed ${readableDate.format(filedDate)}` : "Filed date N/A",
+    recordId: record.id || `${accession}-${side}-${record.insider || record.company}`,
+    accession,
+    side,
+    filed: validFiledDate ? `Filed ${readableDateTime.format(filedDate)}` : record.filed || "Filed date N/A",
+    filedTimestamp: validFiledDate ? filedDate.valueOf() : 0,
+    transactionDateLabel: displayDate(record.transactionDate),
     positionChange: record.positionChange ?? null,
     move5d: typeof record.move5d === "number" ? record.move5d : null,
     trust: record.trust ?? null,
     trustN: record.trustN ?? 0,
-    strength: record.strength ?? 0
+    strength: record.strength ?? 0,
+    context: record.context || "The public filing met PlainSight's published transaction filters.",
+    caveat: record.caveat || "Open the official filing and review its footnotes before drawing a conclusion.",
+    dataStatus: record.dataStatus || "archived-research-record"
+  };
+}
+
+function reviewToSignal(record, index) {
+  const filedDate = record.filedAt ? new Date(record.filedAt) : null;
+  const validFiledDate = filedDate && !Number.isNaN(filedDate.valueOf());
+  return {
+    ...record,
+    recordId: `review-${record.accession || index}`,
+    side: "REVIEW",
+    ticker: record.ticker || "N/A",
+    company: record.company || "Filing under review",
+    insider: record.insider || "Reporting person N/A",
+    role: "Review needed",
+    filed: validFiledDate ? `Filed ${readableDateTime.format(filedDate)}` : "Filed date N/A",
+    filedTimestamp: validFiledDate ? filedDate.valueOf() : 0,
+    transactionDateLabel: "N/A",
+    value: null,
+    price: null,
+    shares: null,
+    sharesAfter: null,
+    positionChange: null,
+    move5d: null,
+    strength: null,
+    trust: null,
+    trustN: 0,
+    securityTitle: "N/A",
+    directOwnership: null,
+    dataStatus: "held-for-review",
+    context: record.reason || "This filing requires manual review.",
+    caveat: "This record is excluded from rankings and transaction totals until its filing details can be verified."
   };
 }
 
@@ -185,21 +237,38 @@ function setField(name, value) {
 }
 
 function renderContext(signal) {
-  selectedTicker = signal.ticker;
+  if (!signal) return;
+  selectedRecordId = signal.recordId;
   setField("ticker", signal.ticker);
+  setField("side", signal.side === "BUY" ? "Purchase" : signal.side === "SELL" ? "Sale" : "Review");
   setField("filed", signal.filed);
   setField("company", signal.company);
   setField("insider", `${signal.insider} · ${signal.role}`);
+  setField("record-id", `SEC accession · ${signal.accession}`);
   setField("trust-score", signal.trust ?? "—");
   setField("trust-status", trustStatus(signal.trust));
   setField("trust-caption", signal.trust === null ? "Not enough mature public signals to score this history." : `Based on ${signal.trustN} mature historical signal${signal.trustN === 1 ? "" : "s"}; low sample confidence.`);
-  setField("value", compactMoney.format(signal.value));
+  setField("value", typeof signal.value === "number" ? compactMoney.format(signal.value) : "N/A");
   setField("price", typeof signal.price === "number" ? `$${signal.price.toFixed(2)}` : "N/A");
+  setField("shares", typeof signal.shares === "number" ? whole.format(signal.shares) : "N/A");
   setField("shares-after", typeof signal.sharesAfter === "number" ? whole.format(signal.sharesAfter) : "N/A");
-  setField("strength", `${signal.strength}/100`);
+  setField("position-change", formatPercentage(signal.positionChange));
+  setField("strength", signal.side === "BUY" && typeof signal.strength === "number" ? `${signal.strength}/100` : "N/A");
+  setField("transaction-date", signal.transactionDateLabel);
+  setField("security", signal.securityTitle || "Common stock");
+  setField("ownership", signal.directOwnership === true ? "Direct" : signal.directOwnership === false ? "Indirect" : "N/A");
+  setField("data-status", sentenceCase(signal.dataStatus));
+  setField("context-label", signal.side === "BUY" ? "Why it stands out" : signal.side === "SELL" ? "What the filing shows" : "Why it needs review");
+  setField("caveat-label", signal.side === "REVIEW" ? "Before using it" : "How to read it");
   setField("context", signal.context);
   setField("caveat", signal.caveat);
 
+  const sideBadge = document.querySelector('[data-field="side"]');
+  sideBadge.className = `side-badge side-${signal.side.toLowerCase()}`;
+  const meterWrap = document.querySelector('[data-field="meter-wrap"]');
+  const meterCaption = document.querySelector('[data-field="trust-caption"]');
+  meterWrap.hidden = signal.side === "REVIEW";
+  meterCaption.hidden = signal.side === "REVIEW";
   const meter = document.querySelector("#signal-context .meter");
   meter.style.setProperty("--score", signal.trust ?? 50);
   meter.classList.toggle("unscored", signal.trust === null);
@@ -213,52 +282,117 @@ function renderContext(signal) {
   report.href = `https://github.com/Mohamed-Borhan/plainsight-trades/issues/new?${reportQuery.toString()}`;
 
   document.querySelectorAll(".signal-row").forEach((row) => {
-    row.classList.toggle("selected", row.dataset.ticker === signal.ticker);
-    row.setAttribute("aria-pressed", String(row.dataset.ticker === signal.ticker));
+    const selected = row.dataset.recordId === signal.recordId;
+    row.classList.toggle("selected", selected);
+    row.setAttribute("aria-pressed", String(selected));
+  });
+}
+
+function sentenceCase(value) {
+  if (!value) return "N/A";
+  const normalized = String(value).replaceAll("-", " ");
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
+function formatPercentage(value) {
+  if (typeof value !== "number") return "N/A";
+  return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
+}
+
+function recordMatchesFilter(record) {
+  if (recordFilter === "all") return true;
+  return record.side.toLowerCase() === recordFilter;
+}
+
+function sortRecords(records) {
+  return [...records].sort((a, b) => {
+    if (sortMode === "largest") return (b.value ?? -1) - (a.value ?? -1) || b.filedTimestamp - a.filedTimestamp;
+    if (sortMode === "strength") return (b.strength ?? -1) - (a.strength ?? -1) || b.filedTimestamp - a.filedTimestamp;
+    if (sortMode === "position") return Math.abs(b.positionChange ?? 0) - Math.abs(a.positionChange ?? 0) || b.filedTimestamp - a.filedTimestamp;
+    return b.filedTimestamp - a.filedTimestamp;
   });
 }
 
 function renderSignals() {
   const query = searchInput.value.trim().toLowerCase();
-  const filtered = signals.filter((signal) => {
-    const matchesQuery = `${signal.ticker} ${signal.company} ${signal.insider}`.toLowerCase().includes(query);
-    const hasMove = typeof signal.move5d === "number";
-    const matchesMove = moveFilter === "all" || (hasMove && (moveFilter === "up" ? signal.move5d >= 0 : signal.move5d < 0));
-    return matchesQuery && matchesMove;
-  });
+  const filtered = sortRecords(ledgerRecords.filter((signal) => {
+    const searchable = `${signal.ticker} ${signal.company} ${signal.insider} ${signal.role} ${signal.accession} ${signal.context}`.toLowerCase();
+    return searchable.includes(query) && recordMatchesFilter(signal);
+  }));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  currentPage = Math.min(currentPage, totalPages);
+  const pageStart = (currentPage - 1) * pageSize;
+  const visibleRecords = filtered.slice(pageStart, pageStart + pageSize);
 
   signalRows.replaceChildren();
   signalEmpty.hidden = filtered.length !== 0;
-  for (const signal of filtered) {
+  ledgerResults.textContent = filtered.length
+    ? `Showing ${whole.format(pageStart + 1)}–${whole.format(Math.min(pageStart + pageSize, filtered.length))} of ${whole.format(filtered.length)} records`
+    : "No matching records";
+  ledgerPage.textContent = `Page ${whole.format(currentPage)} of ${whole.format(totalPages)}`;
+  previousPageButton.disabled = currentPage === 1;
+  nextPageButton.disabled = currentPage === totalPages;
+  document.querySelector("#signal-context").hidden = visibleRecords.length === 0;
+
+  for (const signal of visibleRecords) {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = `signal-row${selectedTicker === signal.ticker ? " selected" : ""}`;
-    button.dataset.ticker = signal.ticker;
-    button.setAttribute("aria-pressed", String(selectedTicker === signal.ticker));
-    const position = signal.positionChange === null ? "N/A" : `+${signal.positionChange.toFixed(1)}%`;
-    const hasMove = typeof signal.move5d === "number";
-    const move = hasMove ? `${signal.move5d >= 0 ? "+" : ""}${signal.move5d.toFixed(1)}%` : "N/A";
+    button.className = `signal-row signal-${signal.side.toLowerCase()}${selectedRecordId === signal.recordId ? " selected" : ""}`;
+    button.dataset.recordId = signal.recordId;
+    button.setAttribute("aria-pressed", String(selectedRecordId === signal.recordId));
+    button.setAttribute("aria-label", `Open ${signal.ticker} ${signal.company} ${signal.side.toLowerCase()} record`);
+    const position = formatPercentage(signal.positionChange);
+    const sideLabel = signal.side === "BUY" ? "Purchase" : signal.side === "SELL" ? "Sale" : "Review needed";
+    const tradeValue = typeof signal.value === "number" ? compactMoney.format(signal.value) : "Held out";
+    const tradeDate = signal.transactionDateLabel === "N/A" ? signal.filed.replace("Filed ", "") : signal.transactionDateLabel;
+    const strength = signal.side === "BUY" && typeof signal.strength === "number" ? signal.strength : "—";
+    const positionClass = typeof signal.positionChange !== "number" ? "pending" : signal.positionChange < 0 ? "negative" : "positive";
     button.innerHTML = `
       <span class="company-cell"><i>${escapeHtml(signal.ticker.slice(0, 2))}</i><span><b>${escapeHtml(signal.ticker)} · ${escapeHtml(signal.company)}</b><small>${escapeHtml(signal.insider)}, ${escapeHtml(signal.role)}</small></span></span>
-      <span><b>${compactMoney.format(signal.value)}</b><small>${whole.format(signal.shares)} shares</small></span>
-      <span><b>${position}</b><small>reported change</small></span>
-      <span class="${!hasMove ? "pending" : signal.move5d >= 0 ? "positive" : "negative"}"><b>${move}</b><small>${hasMove ? "next 5 sessions" : "outcome pending"}</small></span>
-      <span class="score-chip">${signal.strength}</span>`;
+      <span><b class="side-text side-${signal.side.toLowerCase()}">${escapeHtml(sideLabel)}</b><small>${escapeHtml(tradeValue)}</small></span>
+      <span><b>${escapeHtml(tradeDate)}</b><small>${typeof signal.shares === "number" ? `${whole.format(signal.shares)} shares` : "See filing"}</small></span>
+      <span class="${positionClass}"><b>${escapeHtml(position)}</b><small>reported change</small></span>
+      <span class="score-chip${signal.side !== "BUY" ? " score-muted" : ""}">${escapeHtml(strength)}</span>`;
     button.addEventListener("click", () => renderContext(signal));
     signalRows.append(button);
   }
 
-  if (filtered.length && !filtered.some((signal) => signal.ticker === selectedTicker)) renderContext(filtered[0]);
+  if (visibleRecords.length && !visibleRecords.some((signal) => signal.recordId === selectedRecordId)) renderContext(visibleRecords[0]);
 }
 
-searchInput.addEventListener("input", renderSignals);
+searchInput.addEventListener("input", () => {
+  currentPage = 1;
+  renderSignals();
+});
 for (const button of filterButtons) {
   button.addEventListener("click", () => {
-    moveFilter = button.dataset.filter;
+    recordFilter = button.dataset.filter;
+    currentPage = 1;
     filterButtons.forEach((item) => item.classList.toggle("active", item === button));
     renderSignals();
   });
 }
+sortSelect.addEventListener("change", () => {
+  sortMode = sortSelect.value;
+  currentPage = 1;
+  renderSignals();
+});
+previousPageButton.addEventListener("click", () => {
+  if (currentPage > 1) {
+    currentPage -= 1;
+    renderSignals();
+  }
+});
+nextPageButton.addEventListener("click", () => {
+  if (!nextPageButton.disabled) {
+    currentPage += 1;
+    renderSignals();
+  }
+});
+
+signals = signals.map((record) => recordToSignal({ ...record, side: "BUY" }));
+ledgerRecords = [...signals];
+selectedRecordId = ledgerRecords[0]?.recordId ?? null;
 
 const politicalRows = document.querySelector("#political-rows");
 for (const trade of politicalTrades) {
@@ -337,28 +471,45 @@ function linkedBriefRow(item, detail, value) {
   return row;
 }
 
+function updateLedgerCounts(transactionCount, purchaseCount, saleCount, reviewCount) {
+  document.querySelector("#ledger-total-count").textContent = whole.format(transactionCount);
+  document.querySelector("#ledger-buy-count").textContent = whole.format(purchaseCount);
+  document.querySelector("#ledger-sale-count").textContent = whole.format(saleCount);
+  document.querySelector("#ledger-review-count").textContent = whole.format(reviewCount);
+  document.querySelector("#filter-all-count").textContent = `(${whole.format(transactionCount + reviewCount)})`;
+  document.querySelector("#filter-buy-count").textContent = `(${whole.format(purchaseCount)})`;
+  document.querySelector("#filter-sale-count").textContent = `(${whole.format(saleCount)})`;
+  document.querySelector("#filter-review-count").textContent = `(${whole.format(reviewCount)})`;
+}
+
 async function loadStageOneData() {
   try {
     const response = await fetch("./data/signals.json", { cache: "no-store" });
     if (!response.ok) throw new Error(`signal data returned ${response.status}`);
     const data = await response.json();
-    const purchases = (data.transactions || []).filter((record) => record.side === "BUY").map(recordToSignal);
-    if (purchases.length) {
+    const transactions = (data.transactions || []).map(recordToSignal);
+    const reviewRecords = (data.reviewNeeded || []).map(reviewToSignal);
+    const purchases = transactions.filter((record) => record.side === "BUY");
+    const sales = transactions.filter((record) => record.side === "SELL");
+    if (transactions.length || reviewRecords.length) {
       signals = purchases;
-      selectedTicker = signals[0].ticker;
+      ledgerRecords = [...transactions, ...reviewRecords];
+      selectedRecordId = ledgerRecords[0]?.recordId ?? null;
     }
+    updateLedgerCounts(transactions.length, purchases.length, sales.length, reviewRecords.length);
     const status = data.automation?.status === "active" ? "Automation active" : "Automation scheduled";
     document.querySelector("#automation-status").textContent = status;
     document.querySelector("#automation-note").textContent = data.automation?.note || "Nightly SEC updates are enabled.";
     document.querySelector("#hero-signal-count").textContent = whole.format(data.stats?.purchases ?? purchases.length);
     document.querySelector("#data-freshness").innerHTML = `<i></i> Last SEC check ${displayDate(data.lastCheckedDate)}`;
-    document.querySelector("#signal-source-note").textContent = `Public SEC records through ${displayDate(data.lastCheckedDate)}. Automated records show N/A until market outcomes mature.`;
+    document.querySelector("#signal-source-note").textContent = `Complete public SEC ledger through ${displayDate(data.lastCheckedDate)}. It includes qualifying purchases, notable sales, and filings held outside the rankings for review.`;
   } catch (error) {
     console.warn("PlainSight is using its archived fallback data.", error);
     document.querySelector("#automation-status").textContent = "Archived fallback";
+    updateLedgerCounts(ledgerRecords.length, signals.length, 0, 0);
   }
   renderSignals();
-  renderContext(signals[0]);
+  renderContext(ledgerRecords[0]);
 
   try {
     const response = await fetch("./data/weekly/latest.json", { cache: "no-store" });

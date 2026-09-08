@@ -11,7 +11,7 @@
     <link rel="icon" href="assets/favicon.png" type="image/png">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
     <link rel="canonical" href="https://mohamed-borhan.github.io/plainsight-trades/">
-    <link rel="stylesheet" href="styles.css?v=20260824-2">
+    <link rel="stylesheet" href="styles.css?v=20260908-1">
     <meta property="og:type" content="website">
     <meta property="og:title" content="PlainSight | Public Trade Intelligence">
     <meta property="og:description" content="Public filings, ranked signals, and the context behind every trade.">
@@ -84,11 +84,18 @@
       <section class="section reveal" id="signals">
         <div class="section-heading split-heading">
           <div>
-            <span class="eyebrow">Signal ledger</span>
-            <h2>Strongest disclosed buys</h2>
-            <p id="signal-source-note">Public SEC records with automated nightly updates. Search or filter the ledger, then open a record for its context and caveats.</p>
+            <span class="eyebrow">Complete SEC ledger</span>
+            <h2>Every published PlainSight record.</h2>
+            <p id="signal-source-note">Browse qualifying purchases, notable sales, and records held for review. Search, filter, sort, and open any row for the complete filing context.</p>
           </div>
           <div class="freshness" id="data-freshness"><i></i> Automation starts August 16, 2026</div>
+        </div>
+
+        <div class="ledger-kpis" aria-label="SEC ledger totals">
+          <div><strong id="ledger-total-count">—</strong><span>qualifying transactions</span></div>
+          <div><strong id="ledger-buy-count">—</strong><span>open-market buys</span></div>
+          <div><strong id="ledger-sale-count">—</strong><span>notable sales</span></div>
+          <div><strong id="ledger-review-count">—</strong><span>review warnings</span></div>
         </div>
 
         <div class="workbench">
@@ -96,36 +103,64 @@
             <div class="toolbar">
               <label class="search">
                 <span aria-hidden="true">⌕</span>
-                <input id="signal-search" type="search" placeholder="Search company or insider" autocomplete="off" aria-label="Search company or insider">
+                <input id="signal-search" type="search" placeholder="Search company, ticker, insider, role, or accession" autocomplete="off" aria-label="Search the complete SEC ledger">
               </label>
-              <div class="segmented" aria-label="Filter by five-day move">
-                <button class="active" type="button" data-filter="all">All</button>
-                <button type="button" data-filter="up">Moved up</button>
-                <button type="button" data-filter="down">Moved down</button>
+              <div class="segmented ledger-tabs" aria-label="Filter records by type">
+                <button class="active" type="button" data-filter="all">All <span id="filter-all-count"></span></button>
+                <button type="button" data-filter="buy">Buys <span id="filter-buy-count"></span></button>
+                <button type="button" data-filter="sell">Sales <span id="filter-sale-count"></span></button>
+                <button type="button" data-filter="review">Review <span id="filter-review-count"></span></button>
               </div>
             </div>
-            <div class="table-head" aria-hidden="true"><span>Company / insider</span><span>Trade</span><span>Position</span><span>5-day move</span><span>Strength</span></div>
+            <div class="ledger-controls">
+              <span id="ledger-results" aria-live="polite">Loading the complete ledger…</span>
+              <div>
+                <label for="ledger-sort">Sort</label>
+                <select id="ledger-sort">
+                  <option value="newest">Newest filing</option>
+                  <option value="largest">Largest value</option>
+                  <option value="strength">Highest strength</option>
+                  <option value="position">Largest position change</option>
+                </select>
+                <a href="data/signals.json" download>Download JSON ↗</a>
+              </div>
+            </div>
+            <div class="table-head" aria-hidden="true"><span>Company / insider</span><span>Type / value</span><span>Transaction</span><span>Position change</span><span>Strength</span></div>
             <div id="signal-rows"></div>
-            <div class="empty" id="signal-empty" hidden>No signals match those filters.</div>
+            <div class="empty" id="signal-empty" hidden>No records match those filters.</div>
+            <div class="ledger-pagination" aria-label="Ledger page controls">
+              <button id="ledger-previous" type="button">← Previous</button>
+              <span id="ledger-page">Page 1 of 1</span>
+              <button id="ledger-next" type="button">Next →</button>
+            </div>
           </div>
 
           <aside class="context-panel" id="signal-context" aria-live="polite">
-            <div class="context-top"><span class="ticker-badge" data-field="ticker"></span><span class="filed" data-field="filed"></span></div>
+            <div class="context-top"><span><b class="ticker-badge" data-field="ticker"></b><b class="side-badge" data-field="side"></b></span><span class="filed" data-field="filed"></span></div>
             <h3 data-field="company"></h3>
             <p class="insider-line" data-field="insider"></p>
+            <p class="record-id" data-field="record-id"></p>
             <div class="meter-wrap" data-field="meter-wrap">
               <div class="meter"><div class="meter-core"><span data-field="trust-score"></span><small>/100</small></div></div>
               <div><span class="eyebrow">Signal trust</span><strong data-field="trust-status"></strong></div>
             </div>
             <p class="meter-caption" data-field="trust-caption"></p>
             <div class="context-stats">
-              <div><span>Cash deployed</span><b data-field="value"></b></div>
+              <div><span>Reported value</span><b data-field="value"></b></div>
               <div><span>Reported price</span><b data-field="price"></b></div>
+              <div><span>Shares traded</span><b data-field="shares"></b></div>
               <div><span>Shares after</span><b data-field="shares-after"></b></div>
+              <div><span>Position change</span><b data-field="position-change"></b></div>
               <div><span>Signal strength</span><b data-field="strength"></b></div>
             </div>
-            <div class="explain good"><span>Why it stands out</span><p data-field="context"></p></div>
-            <div class="explain watch"><span>What could weaken it</span><p data-field="caveat"></p></div>
+            <dl class="record-meta">
+              <div><dt>Transaction date</dt><dd data-field="transaction-date"></dd></div>
+              <div><dt>Security</dt><dd data-field="security"></dd></div>
+              <div><dt>Ownership</dt><dd data-field="ownership"></dd></div>
+              <div><dt>Data status</dt><dd data-field="data-status"></dd></div>
+            </dl>
+            <div class="explain good"><span data-field="context-label">What the filing shows</span><p data-field="context"></p></div>
+            <div class="explain watch"><span data-field="caveat-label">How to read it</span><p data-field="caveat"></p></div>
             <div class="context-links">
               <a class="source-link" data-field="source" target="_blank" rel="noreferrer">Open official SEC filing <span aria-hidden="true">↗</span></a>
               <a class="report-link" data-field="report" target="_blank" rel="noreferrer">Report a data issue <span aria-hidden="true">↗</span></a>
@@ -350,6 +385,6 @@
       <span>Built by <a href="https://mohamed-borhan.github.io/">Mohamed Borhan</a></span>
     </footer>
 
-    <script src="script.js?v=20260824-2" defer></script>
+    <script src="script.js?v=20260908-1" defer></script>
   </body>
 </html>
