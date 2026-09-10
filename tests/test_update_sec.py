@@ -1,14 +1,35 @@
 from __future__ import annotations
 
+import gzip
 import sys
 import unittest
+import urllib.error
+from email.message import Message
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from update_sec import filing_index_url, parse_form4_submission, parse_master_index  # noqa: E402
+from update_sec import SecClient, filing_index_url, parse_form4_submission, parse_master_index  # noqa: E402
+
+
+class FakeResponse:
+    def __init__(self, payload: bytes, content_encoding: str = "") -> None:
+        self.payload = payload
+        self.headers = Message()
+        if content_encoding:
+            self.headers["Content-Encoding"] = content_encoding
+
+    def __enter__(self) -> "FakeResponse":
+        return self
+
+    def __exit__(self, *_args: object) -> None:
+        return None
+
+    def read(self) -> bytes:
+        return self.payload
 
 
 class Form4CollectorTests(unittest.TestCase):
@@ -65,6 +86,35 @@ class Form4CollectorTests(unittest.TestCase):
             filing_index_url(self.filing["filename"]),
             "https://www.sec.gov/Archives/edgar/data/123456/000012345626000001/0000123456-26-000001-index.html",
         )
+
+    def test_sec_client_declares_bot_headers_and_decodes_gzip(self) -> None:
+        client = SecClient("PlainSight/1.0 Mohamed Borhan test@example.com")
+        response = FakeResponse(gzip.compress(b"official filing"), "gzip")
+        with patch("update_sec.urllib.request.urlopen", return_value=response) as urlopen:
+            result = client.get_text("https://www.sec.gov/test")
+
+        request = urlopen.call_args.args[0]
+        self.assertEqual(result, "official filing")
+        self.assertEqual(request.get_header("User-agent"), "PlainSight/1.0 Mohamed Borhan test@example.com")
+        self.assertEqual(request.get_header("Accept-encoding"), "gzip, deflate")
+        self.assertEqual(request.get_header("From"), "test@example.com")
+        self.assertEqual(request.get_header("Host"), "www.sec.gov")
+
+    def test_sec_client_retries_a_403_response(self) -> None:
+        client = SecClient("PlainSight/1.0 Mohamed Borhan test@example.com")
+        headers = Message()
+        error = urllib.error.HTTPError("https://www.sec.gov/test", 403, "Forbidden", headers, None)
+        response = FakeResponse(b"recovered")
+        with (
+            patch("update_sec.urllib.request.urlopen", side_effect=[error, response]) as urlopen,
+            patch("update_sec.time.sleep") as sleep,
+            patch("update_sec.random.uniform", return_value=0.25),
+        ):
+            result = client.get_text("https://www.sec.gov/test")
+
+        self.assertEqual(result, "recovered")
+        self.assertEqual(urlopen.call_count, 2)
+        sleep.assert_called_once_with(5.25)
 
 
 if __name__ == "__main__":

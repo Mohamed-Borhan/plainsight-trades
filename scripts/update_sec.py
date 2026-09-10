@@ -9,15 +9,18 @@ It never places trades or connects to a brokerage.
 from __future__ import annotations
 
 import argparse
+import gzip
 import json
 import math
 import os
+import random
 import re
 import sys
 import time
 import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
+import zlib
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -33,7 +36,8 @@ FORM_TYPES = {"4", "4/A"}
 COMMON_SECURITY_TERMS = ("common stock", "common shares")
 BUY_MINIMUM = Decimal("50000")
 SALE_MINIMUM = Decimal("250000")
-REQUEST_INTERVAL_SECONDS = 0.26
+REQUEST_INTERVAL_SECONDS = max(0.2, float(os.environ.get("SEC_REQUEST_INTERVAL_SECONDS", "0.45")))
+MAX_REQUEST_ATTEMPTS = max(2, int(os.environ.get("SEC_MAX_REQUEST_ATTEMPTS", "6")))
 MAX_HISTORY = 2500
 MAX_PROCESSED_ACCESSIONS = 12000
 EASTERN = ZoneInfo("America/New_York")
@@ -56,25 +60,49 @@ class SecClient:
             headers={
                 "User-Agent": self.user_agent,
                 "Accept": "text/plain, application/xml, text/xml, */*",
+                "Accept-Encoding": "gzip, deflate",
+                "From": self.user_agent.rsplit(" ", 1)[-1],
+                "Host": "www.sec.gov",
             },
         )
         last_error: Exception | None = None
-        for attempt in range(4):
+        for attempt in range(MAX_REQUEST_ATTEMPTS):
             try:
                 with urllib.request.urlopen(request, timeout=45) as response:
                     self._last_request = time.monotonic()
-                    return response.read().decode("utf-8", errors="replace")
+                    payload = response.read()
+                    content_encoding = (response.headers.get("Content-Encoding") or "").lower()
+                    if "gzip" in content_encoding:
+                        payload = gzip.decompress(payload)
+                    elif "deflate" in content_encoding:
+                        payload = zlib.decompress(payload)
+                    return payload.decode("utf-8", errors="replace")
             except urllib.error.HTTPError as error:
                 self._last_request = time.monotonic()
                 if allow_not_found and error.code == 404:
                     return None
-                if error.code not in {429, 500, 502, 503, 504}:
+                if error.code not in {403, 429, 500, 502, 503, 504}:
                     raise
                 last_error = error
+                retry_after = error.headers.get("Retry-After") if error.headers else None
+                try:
+                    requested_delay = float(retry_after) if retry_after else 0.0
+                except ValueError:
+                    requested_delay = 0.0
+                base_delay = 5.0 * (2**attempt) if error.code in {403, 429} else 2.0**attempt
+                delay = max(requested_delay, base_delay) + random.uniform(0.25, 1.25)
             except (urllib.error.URLError, TimeoutError) as error:
                 self._last_request = time.monotonic()
                 last_error = error
-            time.sleep(2**attempt)
+                delay = 2.0**attempt + random.uniform(0.25, 1.25)
+            if attempt + 1 < MAX_REQUEST_ATTEMPTS:
+                print(
+                    f"warning: SEC request attempt {attempt + 1}/{MAX_REQUEST_ATTEMPTS} failed; "
+                    f"retrying in {delay:.1f}s: {url}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                time.sleep(delay)
         raise RuntimeError(f"SEC request failed after retries: {url}: {last_error}")
 
 

@@ -20,10 +20,17 @@ concurrency:
 
 jobs:
   update:
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # Windows runners use a different hosted network pool than the Ubuntu
+    # runners that SEC EDGAR repeatedly rejected with HTTP 403 responses.
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
     env:
-      SEC_USER_AGENT: "PlainSight public filing research mohammedborhan0480@gmail.com"
+      SEC_USER_AGENT: "PlainSight/1.0 Mohamed Borhan mohammedborhan0480@gmail.com"
+      SEC_REQUEST_INTERVAL_SECONDS: "0.45"
+      SEC_MAX_REQUEST_ATTEMPTS: "6"
     steps:
       - name: Check out the website
         uses: actions/checkout@v4
@@ -39,7 +46,19 @@ jobs:
       - name: Collect new public Form 4 filings
         env:
           LOOKBACK_DAYS: ${{ inputs.lookback_days || '4' }}
-        run: python scripts/update_sec.py --lookback-days "$LOOKBACK_DAYS"
+        run: |
+          for attempt in 1 2 3; do
+            echo "SEC collection attempt $attempt of 3"
+            if python scripts/update_sec.py --lookback-days "$LOOKBACK_DAYS"; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              delay=$((attempt * 120))
+              echo "The SEC request was not accepted. Retrying the complete collection in ${delay}s."
+              sleep "$delay"
+            fi
+          done
+          exit 1
 
       - name: Validate the published data
         run: python scripts/validate_data.py
