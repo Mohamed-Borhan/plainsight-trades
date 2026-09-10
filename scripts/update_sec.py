@@ -368,11 +368,58 @@ def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def observed_fixed_holiday(day: date) -> date:
+    if day.weekday() == 5:
+        return day - timedelta(days=1)
+    if day.weekday() == 6:
+        return day + timedelta(days=1)
+    return day
+
+
+def nth_weekday(year: int, month: int, weekday: int, occurrence: int) -> date:
+    first = date(year, month, 1)
+    offset = (weekday - first.weekday()) % 7
+    return first + timedelta(days=offset + 7 * (occurrence - 1))
+
+
+def last_weekday(year: int, month: int, weekday: int) -> date:
+    if month == 12:
+        first_of_next_month = date(year + 1, 1, 1)
+    else:
+        first_of_next_month = date(year, month + 1, 1)
+    last = first_of_next_month - timedelta(days=1)
+    return last - timedelta(days=(last.weekday() - weekday) % 7)
+
+
+def edgar_holidays(year: int) -> set[date]:
+    """Return regular federal holidays when EDGAR does not accept filings."""
+    holidays = {
+        observed_fixed_holiday(date(year, 1, 1)),
+        nth_weekday(year, 1, 0, 3),  # Martin Luther King Jr. Day
+        nth_weekday(year, 2, 0, 3),  # Washington's Birthday
+        last_weekday(year, 5, 0),  # Memorial Day
+        observed_fixed_holiday(date(year, 7, 4)),
+        nth_weekday(year, 9, 0, 1),  # Labor Day
+        nth_weekday(year, 10, 0, 2),  # Columbus Day
+        observed_fixed_holiday(date(year, 11, 11)),
+        nth_weekday(year, 11, 3, 4),  # Thanksgiving Day
+        observed_fixed_holiday(date(year, 12, 25)),
+    }
+    if year >= 2021:
+        holidays.add(observed_fixed_holiday(date(year, 6, 19)))
+
+    # New Year's Day can be observed on December 31 of the prior year.
+    following_new_year = observed_fixed_holiday(date(year + 1, 1, 1))
+    if following_new_year.year == year:
+        holidays.add(following_new_year)
+    return holidays
+
+
 def date_sequence(start: date, end: date) -> list[date]:
     days: list[date] = []
     current = start
     while current <= end:
-        if current.weekday() < 5:
+        if current.weekday() < 5 and current not in edgar_holidays(current.year):
             days.append(current)
         current += timedelta(days=1)
     return days

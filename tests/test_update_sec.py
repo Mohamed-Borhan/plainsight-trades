@@ -4,6 +4,7 @@ import gzip
 import sys
 import unittest
 import urllib.error
+from datetime import date
 from email.message import Message
 from pathlib import Path
 from unittest.mock import patch
@@ -12,7 +13,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from update_sec import SecClient, filing_index_url, parse_form4_submission, parse_master_index  # noqa: E402
+from update_sec import SecClient, date_sequence, filing_index_url, parse_form4_submission, parse_master_index  # noqa: E402
 
 
 class FakeResponse:
@@ -115,6 +116,13 @@ class Form4CollectorTests(unittest.TestCase):
         self.assertEqual(result, "recovered")
         self.assertEqual(urlopen.call_count, 2)
         sleep.assert_called_once_with(5.25)
+
+    def test_date_sequence_skips_edgar_weekends_and_holidays(self) -> None:
+        self.assertEqual(
+            date_sequence(date(2026, 9, 5), date(2026, 9, 10)),
+            [date(2026, 9, 8), date(2026, 9, 9), date(2026, 9, 10)],
+        )
+        self.assertNotIn(date(2026, 7, 3), date_sequence(date(2026, 7, 1), date(2026, 7, 6)))
 
 
 if __name__ == "__main__":

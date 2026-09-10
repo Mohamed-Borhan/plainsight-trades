@@ -20,8 +20,8 @@ concurrency:
 
 jobs:
   update:
-    # Windows runners use a different hosted network pool than the Ubuntu
-    # runners that SEC EDGAR repeatedly rejected with HTTP 403 responses.
+    # Keep the collector on a separate hosted network pool and let the script
+    # skip dates when EDGAR is officially closed.
     runs-on: windows-latest
     timeout-minutes: 60
     defaults:
