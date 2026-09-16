@@ -425,6 +425,14 @@ def date_sequence(start: date, end: date) -> list[date]:
     return days
 
 
+def most_recent_completed_edgar_day(today: date) -> date:
+    """Return the latest filing day whose daily index should be complete."""
+    candidate = today - timedelta(days=1)
+    while candidate.weekday() >= 5 or candidate in edgar_holidays(candidate.year):
+        candidate -= timedelta(days=1)
+    return candidate
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--as-of", help="Override the collection end date (YYYY-MM-DD).")
@@ -435,7 +443,11 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    as_of = date.fromisoformat(args.as_of) if args.as_of else datetime.now(EASTERN).date()
+    as_of = (
+        date.fromisoformat(args.as_of)
+        if args.as_of
+        else most_recent_completed_edgar_day(datetime.now(EASTERN).date())
+    )
     state = load_json(STATE_PATH, {"lastSuccessfulDate": as_of.isoformat(), "processedAccessions": []})
     data = load_json(DATA_PATH, {"transactions": [], "reviewNeeded": []})
     last_success = date.fromisoformat(state.get("lastSuccessfulDate", as_of.isoformat()))

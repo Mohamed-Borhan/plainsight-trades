@@ -13,7 +13,14 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from update_sec import SecClient, date_sequence, filing_index_url, parse_form4_submission, parse_master_index  # noqa: E402
+from update_sec import (  # noqa: E402
+    SecClient,
+    date_sequence,
+    filing_index_url,
+    most_recent_completed_edgar_day,
+    parse_form4_submission,
+    parse_master_index,
+)
 
 
 class FakeResponse:
@@ -123,6 +130,11 @@ class Form4CollectorTests(unittest.TestCase):
             [date(2026, 9, 8), date(2026, 9, 9), date(2026, 9, 10)],
         )
         self.assertNotIn(date(2026, 7, 3), date_sequence(date(2026, 7, 1), date(2026, 7, 6)))
+
+    def test_automatic_cutoff_uses_last_completed_edgar_day(self) -> None:
+        self.assertEqual(most_recent_completed_edgar_day(date(2026, 9, 16)), date(2026, 9, 15))
+        self.assertEqual(most_recent_completed_edgar_day(date(2026, 9, 14)), date(2026, 9, 11))
+        self.assertEqual(most_recent_completed_edgar_day(date(2026, 9, 8)), date(2026, 9, 4))
 
 
 if __name__ == "__main__":
