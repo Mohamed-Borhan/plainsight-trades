@@ -20,6 +20,7 @@ PlainSight is a public-filings research interface that adds context to SEC insid
 - A GitHub workflow checks official SEC daily indexes every weekday after EDGAR closes.
 - The collector parses ownership XML and keeps direct, non-derivative common-stock open-market purchases (code P) of at least $50,000 and notable direct sales (code S) of at least $250,000.
 - Accession numbers provide deduplication, and amended or ambiguous filings are routed to a review-needed list.
+- Each successful collection publishes a full daily on-site brief with ranked purchases, notable sales, clusters, possible direct-position exits, review warnings, and official SEC links.
 - A second workflow generates an on-site weekly preview every Saturday.
 - The weekly newsletter remains explicitly labeled as a work in progress while the project collects enough validated history for more meaningful rankings and grades.
 - Email collection and email delivery are disabled during Stage 1.

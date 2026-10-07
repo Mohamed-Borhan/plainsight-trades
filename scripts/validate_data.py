@@ -25,11 +25,13 @@ def official_sec_url(value: str) -> bool:
 def main() -> int:
     signals = load(ROOT / "data" / "signals.json")
     state = load(ROOT / "data" / "state.json")
+    daily = load(ROOT / "data" / "daily" / "latest.json")
     weekly = load(ROOT / "data" / "weekly" / "latest.json")
     archive = load(ROOT / "data" / "weekly" / "archive-index.json")
 
     assert signals.get("schemaVersion") == 1
     assert state.get("schemaVersion") == 1
+    assert daily.get("schemaVersion") == 1
     assert weekly.get("schemaVersion") == 1
     assert archive.get("schemaVersion") == 1
     assert signals.get("automation", {}).get("emailDelivery") is False
@@ -55,6 +57,24 @@ def main() -> int:
     for warning in signals.get("reviewNeeded", []):
         assert official_sec_url(warning["source"])
         assert warning.get("reason")
+
+    daily_records = [
+        *daily.get("strongestBuys", []),
+        *daily.get("notableSales", []),
+    ]
+    daily_ids: set[str] = set()
+    for record in daily_records:
+        assert record.get("id") not in daily_ids
+        daily_ids.add(record.get("id"))
+        assert official_sec_url(record["source"])
+    for warning in daily.get("reviewNeeded", []):
+        assert official_sec_url(warning["source"])
+        assert warning.get("reason")
+    daily_counts = daily.get("counts", {})
+    assert daily_counts.get("qualifyingPurchases") == len(daily.get("strongestBuys", []))
+    assert daily_counts.get("notableSales") == len(daily.get("notableSales", []))
+    assert daily_counts.get("clusters") == len(daily.get("clusters", []))
+    assert daily_counts.get("reviewNeeded") == len(daily.get("reviewNeeded", []))
 
     assert weekly.get("periodStart") <= weekly.get("periodEnd")
     assert isinstance(weekly.get("strongestBuys"), list)

@@ -63,6 +63,9 @@ jobs:
           done
           exit 1
 
+      - name: Build the daily public-filings brief
+        run: python scripts/build_daily.py
+
       - name: Validate the published data
         run: python scripts/validate_data.py
 
@@ -70,7 +73,7 @@ jobs:
         run: |
           git config user.name "PlainSight Automation"
           git config user.email "actions@users.noreply.github.com"
-          git add data/signals.json data/state.json
+          git add data/signals.json data/state.json data/daily
           if git diff --cached --quiet; then
             echo "No data changes to publish."
             exit 0

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Daily SEC Brief | PlainSight</title>
+    <meta name="description" content="PlainSight's latest daily brief of qualifying public SEC Form 4 insider transactions, clusters, and review warnings.">
+    <meta name="author" content="Mohamed Borhan">
+    <meta name="theme-color" content="#102d2b">
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="icon" href="assets/favicon.png" type="image/png">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+    <link rel="canonical" href="https://mohamed-borhan.github.io/plainsight-trades/daily.html">
+    <link rel="stylesheet" href="styles.css?v=20261007-1">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Daily SEC Brief | PlainSight">
+    <meta property="og:description" content="The latest qualifying public insider transactions with filing context and official SEC links.">
+    <meta property="og:url" content="https://mohamed-borhan.github.io/plainsight-trades/daily.html">
+    <meta property="og:image" content="https://mohamed-borhan.github.io/plainsight-trades/assets/og.png">
+  </head>
+  <body class="daily-page">
+    <a class="skip-link" href="#daily-main">Skip to the daily brief</a>
+    <header class="topbar" id="top">
+      <a class="brand" href="./" aria-label="PlainSight home">
+        <span class="brand-mark">P</span>
+        <span><b>PlainSight</b><small>Public trade intelligence</small></span>
+      </a>
+      <nav aria-label="Daily brief navigation">
+        <a href="#buys">Buys</a>
+        <a href="#sales">Sales</a>
+        <a href="#clusters">Clusters</a>
+        <a href="#review">Review</a>
+      </nav>
+      <a class="button button-small" href="./">Back to research <span aria-hidden="true">→</span></a>
+    </header>
+
+    <main id="daily-main">
+      <section class="daily-hero">
+        <div>
+          <span class="eyebrow">Latest automated SEC edition</span>
+          <h1>The daily public-insider brief.</h1>
+          <p>Every qualifying trade from the latest successful collection, ranked with its filing context intact. Public SEC Forms 4 and 4/A only.</p>
+          <div class="daily-meta"><i></i><span id="daily-edition">Loading the latest edition…</span></div>
+        </div>
+        <aside class="daily-hero-note">
+          <b>Research, not execution.</b>
+          <p>PlainSight never places orders. Filings may be delayed, amended, incomplete, or corrected later.</p>
+          <a href="data/daily/latest.json" download>Download this edition’s JSON ↗</a>
+        </aside>
+      </section>
+
+      <section class="daily-kpis" aria-label="Daily edition totals">
+        <div><strong id="daily-buy-count">—</strong><span>qualifying buys</span></div>
+        <div><strong id="daily-sale-count">—</strong><span>notable sales</span></div>
+        <div><strong id="daily-cluster-count">—</strong><span>clusters</span></div>
+        <div><strong id="daily-review-count">—</strong><span>review warnings</span></div>
+      </section>
+
+      <section class="daily-section" id="buys">
+        <div class="daily-heading">
+          <div><span class="eyebrow">Ranked public purchases</span><h2>Strongest buys</h2></div>
+          <p>Conviction prioritizes filings by transaction size, estimated position change, seniority, clusters, and mature historical grades when available.</p>
+        </div>
+        <div class="daily-table-wrap"><table class="daily-table"><thead><tr><th>Issuer / insider</th><th>Filed</th><th>Trade</th><th>Shares / price</th><th>Value</th><th>Position</th><th>Grade</th><th>Conviction</th><th>Source</th></tr></thead><tbody id="daily-buys"></tbody></table></div>
+        <p class="daily-empty" id="daily-buys-empty" hidden>No qualifying purchases appeared in this edition.</p>
+      </section>
+
+      <section class="daily-section daily-section-dark" id="sales">
+        <div class="daily-heading">
+          <div><span class="eyebrow">Context required</span><h2>Notable sales and possible exits</h2></div>
+          <p>A sale is not automatically bearish. It can reflect diversification, taxes, liquidity needs, or a prearranged trading plan.</p>
+        </div>
+        <div class="daily-table-wrap"><table class="daily-table"><thead><tr><th>Issuer / insider</th><th>Filed</th><th>Trade</th><th>Shares / price</th><th>Value</th><th>Position</th><th>Source</th></tr></thead><tbody id="daily-sales"></tbody></table></div>
+        <p class="daily-empty" id="daily-sales-empty" hidden>No notable sales appeared in this edition.</p>
+      </section>
+
+      <section class="daily-split">
+        <article class="daily-panel" id="clusters">
+          <span class="eyebrow">Same issuer · multiple filers</span>
+          <h2>Clusters</h2>
+          <div class="daily-card-list" id="daily-clusters"></div>
+        </article>
+        <article class="daily-panel" id="review">
+          <span class="eyebrow">Held outside the ranking</span>
+          <h2>Amendments and review</h2>
+          <div class="daily-card-list" id="daily-review"></div>
+        </article>
+      </section>
+
+      <section class="daily-method" id="method">
+        <div><span class="eyebrow">Methodology and risk</span><h2>A filing is evidence, not a forecast.</h2></div>
+        <ul>
+          <li>Direct, non-derivative common-stock open-market purchases coded P must total at least <b id="daily-buy-minimum">$50,000</b>.</li>
+          <li>Direct open-market sales coded S must total at least <b id="daily-sale-minimum">$250,000</b>.</li>
+          <li>Grants, awards, option exercises, tax withholding, gifts, derivatives, indirect holdings, and ambiguous transactions stay outside the ranking.</li>
+          <li>Position change estimates use reported transaction shares and direct shares held afterward. They are not percentages of an insider’s total personal portfolio.</li>
+          <li>This edition covers SEC corporate-insider filings only. It does not include congressional trading disclosures.</li>
+          <li>Public-filing research only. This is not financial advice, and past outcomes do not predict future returns.</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer>
+      <a class="brand" href="./"><span class="brand-mark">P</span><span><b>PlainSight</b><small>Public trade intelligence</small></span></a>
+      <p>Public filings only · official SEC sources · no order execution</p>
+      <span>Built by <a href="https://mohamed-borhan.github.io/">Mohamed Borhan</a></span>
+    </footer>
+
+    <script src="daily.js?v=20261007-1" defer></script>
+  </body>
+</html>
