@@ -72,6 +72,7 @@ class Form4CollectorTests(unittest.TestCase):
         self.assertEqual(record["side"], "BUY")
         self.assertEqual(record["value"], 100000.0)
         self.assertEqual(record["positionChange"], 50.0)
+        self.assertEqual(record["reportingOwnerCik"], "0000123456")
         self.assertIn("Chief Executive Officer", record["role"])
 
     def test_indirect_and_preferred_transactions_are_excluded(self) -> None:

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-31T12:40:00Z",
+  "method": "One active public GitHub issue-form vote per GitHub account; the latest edited vote wins.",
+  "totalVotes": 0,
+  "options": [
+    {
+      "id": "review-queue",
+      "label": "Clean and explain the review queue",
+      "description": "Reconcile amendments and show resolved, superseded, or still-needs-review status.",
+      "votes": 0
+    },
+    {
+      "id": "trust-meter",
+      "label": "Validated Trust Meter",
+      "description": "Add benchmark-relative history, sample size, and confidence to insider records.",
+      "votes": 0
+    },
+    {
+      "id": "benchmark-outcomes",
+      "label": "Benchmark outcome charts",
+      "description": "Compare 30-, 90-, and 180-session follow-through with SPY.",
+      "votes": 0
+    },
+    {
+      "id": "advanced-filters",
+      "label": "Advanced filing filters and export",
+      "description": "Filter by role, size, date, cluster, confidence, and review status.",
+      "votes": 0
+    },
+    {
+      "id": "congressional-automation",
+      "label": "Automated congressional disclosures",
+      "description": "Import official House and Senate disclosures into a separate tracker.",
+      "votes": 0
+    },
+    {
+      "id": "newsletter-watchlists",
+      "label": "Weekly delivery and watchlists",
+      "description": "Offer an optional weekly email and issuer watchlists without order execution.",
+      "votes": 0
+    }
+  ]
+}

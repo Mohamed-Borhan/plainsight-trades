@@ -45,7 +45,9 @@ function displayPercent(value) {
 
 function displayGrade(record) {
   if (typeof record.trust !== "number") return "N/A";
-  return `${record.trust.toFixed(1)}/100${record.trustN ? ` · n=${record.trustN}` : ""}`;
+  const sample = record.trustN ? `n=${record.trustN}` : "sample N/A";
+  const confidence = record.trustConfidence || "confidence N/A";
+  return `${record.trust.toFixed(1)}/100 · ${sample} · ${confidence}`;
 }
 
 function recordRow(record, includeRank) {

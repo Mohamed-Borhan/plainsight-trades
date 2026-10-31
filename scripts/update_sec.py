@@ -31,6 +31,7 @@ from zoneinfo import ZoneInfo
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "signals.json"
 STATE_PATH = ROOT / "data" / "state.json"
+TRUST_SCORES_PATH = ROOT / "data" / "trust-scores.json"
 SEC_BASE = "https://www.sec.gov"
 FORM_TYPES = {"4", "4/A"}
 COMMON_SECURITY_TERMS = ("common stock", "common shares")
@@ -114,6 +115,11 @@ def parse_decimal(value: str | None) -> Decimal | None:
         return Decimal(cleaned)
     except InvalidOperation:
         return None
+
+
+def canonical_cik(value: str | None) -> str:
+    digits = "".join(character for character in str(value or "") if character.isdigit())
+    return digits.zfill(10) if digits else ""
 
 
 def element_value(parent: ET.Element, path: str) -> str | None:
@@ -262,6 +268,9 @@ def parse_form4_submission(submission: str, filing: dict[str, str]) -> tuple[lis
     ticker = element_value(root, "./issuer/issuerTradingSymbol") or "N/A"
     issuer_cik = element_value(root, "./issuer/issuerCik") or ""
     insider = element_value(root, "./reportingOwner/reportingOwnerId/rptOwnerName") or filing["companyName"]
+    reporting_owner_cik = canonical_cik(
+        element_value(root, "./reportingOwner/reportingOwnerId/rptOwnerCik")
+    )
     role = reporting_role(root)
 
     if filing["form"] == "4/A":
@@ -324,6 +333,7 @@ def parse_form4_submission(submission: str, filing: dict[str, str]) -> tuple[lis
                 "accession": filing["accession"],
                 "form": filing["form"],
                 "issuerCik": issuer_cik,
+                "reportingOwnerCik": reporting_owner_cik or None,
                 "ticker": ticker.upper(),
                 "company": company,
                 "insider": insider,
@@ -361,6 +371,42 @@ def load_json(path: Path, default: dict[str, Any]) -> dict[str, Any]:
     if not path.exists():
         return default
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def trust_score_snapshot() -> tuple[dict[str, dict[str, Any]], str | None, str]:
+    snapshot = load_json(TRUST_SCORES_PATH, {"insiders": []})
+    scores = {
+        canonical_cik(item.get("reportingOwnerCik")): item
+        for item in snapshot.get("insiders", [])
+        if canonical_cik(item.get("reportingOwnerCik"))
+    }
+    return scores, snapshot.get("asOf"), snapshot.get("benchmark", "SPY")
+
+
+def apply_trust_snapshot(
+    record: dict[str, Any],
+    scores: dict[str, dict[str, Any]],
+    as_of: str | None,
+    benchmark: str,
+) -> None:
+    """Attach historical purchase-follow-through fields without changing conviction."""
+    if record.get("side") != "BUY":
+        return
+    score = scores.get(canonical_cik(record.get("reportingOwnerCik")))
+    if not score:
+        return
+    record.update(
+        {
+            "trust": score.get("score"),
+            "trustN": score.get("sampleSize", 0),
+            "trustConfidence": score.get("confidence"),
+            "trustScoreBand": score.get("scoreBand"),
+            "trustAverageExcessReturnPct": score.get("cappedAverageExcessReturnPct"),
+            "trustHitRatePct": score.get("hitRatePct"),
+            "trustAsOf": as_of,
+            "trustBenchmark": benchmark,
+        }
+    )
 
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
@@ -497,6 +543,9 @@ def main() -> int:
     for record in merged:
         unique_records.setdefault(record["id"], record)
     merged = list(unique_records.values())[:MAX_HISTORY]
+    scores, trust_as_of, trust_benchmark = trust_score_snapshot()
+    for record in merged:
+        apply_trust_snapshot(record, scores, trust_as_of, trust_benchmark)
 
     existing_review = data.get("reviewNeeded", [])
     warning_accessions = {item["accession"] for item in new_review}

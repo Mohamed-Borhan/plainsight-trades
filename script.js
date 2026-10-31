@@ -124,14 +124,6 @@ const politicalTrades = [
   { filer: "Dan Newhouse", chamber: "House", office: "WA-04", asset: "Textron", ticker: "TXT", side: "BUY", tradeDate: "Dec 11, 2025", filed: "Jan 15, 2026", range: "$1,001–$15,000", owner: "Spouse", source: "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20033654.pdf" }
 ];
 
-const trustLeaders = [
-  { name: "Frank B. Holding Jr.", role: "Chairman & CEO", score: 65, n: 14, excess: 17.4, hit: 64 },
-  { name: "Anthony Noto", role: "Chief Executive Officer", score: 61, n: 34, excess: 6.3, hit: 41 },
-  { name: "Morris Goldfarb", role: "CEO", score: 60, n: 7, excess: 17.4, hit: 71 },
-  { name: "Gary G. Friedman", role: "Chairman & CEO", score: 60, n: 6, excess: 16.5, hit: 83 },
-  { name: "Joseph M. Hogan", role: "President & CEO", score: 59, n: 7, excess: 19.7, hit: 57 }
-];
-
 const compactMoney = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 });
 const whole = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 const readableDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -151,12 +143,17 @@ let selectedRecordId = null;
 let recordFilter = "all";
 let sortMode = "newest";
 let currentPage = 1;
+let trustScoresByCik = new Map();
+let trustSnapshotMeta = null;
 
 function recordToSignal(record) {
   const filedDate = record.filedAt ? new Date(record.filedAt) : null;
   const validFiledDate = filedDate && !Number.isNaN(filedDate.valueOf());
   const side = record.side || "BUY";
   const accession = record.accession || "Archived record";
+  const historical = trustScoresByCik.get(record.reportingOwnerCik);
+  const trustN = historical?.sampleSize ?? record.trustN ?? 0;
+  const trust = trustN >= 3 ? historical?.score ?? record.trust ?? null : null;
   return {
     ...record,
     recordId: record.id || `${accession}-${side}-${record.insider || record.company}`,
@@ -167,8 +164,14 @@ function recordToSignal(record) {
     transactionDateLabel: displayDate(record.transactionDate),
     positionChange: record.positionChange ?? null,
     move5d: typeof record.move5d === "number" ? record.move5d : null,
-    trust: record.trust ?? null,
-    trustN: record.trustN ?? 0,
+    trust,
+    trustN,
+    trustConfidence: historical?.confidence ?? record.trustConfidence ?? null,
+    trustScoreBand: historical?.scoreBand ?? record.trustScoreBand ?? null,
+    trustAverageExcessReturnPct: historical?.cappedAverageExcessReturnPct ?? record.trustAverageExcessReturnPct ?? null,
+    trustHitRatePct: historical?.hitRatePct ?? record.trustHitRatePct ?? null,
+    trustAsOf: record.trustAsOf ?? trustSnapshotMeta?.asOf ?? null,
+    trustBenchmark: record.trustBenchmark ?? trustSnapshotMeta?.benchmark ?? "SPY",
     strength: record.strength ?? 0,
     context: record.context || "The public filing met PlainSight's published transaction filters.",
     caveat: record.caveat || "Open the official filing and review its footnotes before drawing a conclusion.",
@@ -223,12 +226,19 @@ function escapeHtml(value) {
   })[character]);
 }
 
-function trustStatus(score) {
+function trustScoreBand(score) {
   if (score === null) return "Unscored";
-  if (score >= 62) return "Established";
-  if (score >= 55) return "Developing";
+  if (score >= 60) return "Strong";
+  if (score >= 55) return "Positive";
   if (score >= 45) return "Neutral";
   return "Weak";
+}
+
+function trustConfidenceBand(sampleSize) {
+  if (sampleSize < 3) return "Insufficient history";
+  if (sampleSize < 6) return "Provisional confidence";
+  if (sampleSize < 12) return "Developing confidence";
+  return "Established confidence";
 }
 
 function setField(name, value) {
@@ -246,8 +256,11 @@ function renderContext(signal) {
   setField("insider", `${signal.insider} · ${signal.role}`);
   setField("record-id", `SEC accession · ${signal.accession}`);
   setField("trust-score", signal.trust ?? "—");
-  setField("trust-status", trustStatus(signal.trust));
-  setField("trust-caption", signal.trust === null ? "Not enough mature public signals to score this history." : `Based on ${signal.trustN} mature historical signal${signal.trustN === 1 ? "" : "s"}; low sample confidence.`);
+  setField("trust-status", signal.trust === null ? "Unscored · insufficient history" : `${signal.trustScoreBand || trustScoreBand(signal.trust)} · ${signal.trustConfidence || trustConfidenceBand(signal.trustN).replace(" confidence", "")}`);
+  const excess = typeof signal.trustAverageExcessReturnPct === "number" ? `${signal.trustAverageExcessReturnPct >= 0 ? "+" : ""}${signal.trustAverageExcessReturnPct.toFixed(1)}% capped average excess` : "benchmark outcome N/A";
+  const hit = typeof signal.trustHitRatePct === "number" ? `${signal.trustHitRatePct}% beat ${signal.trustBenchmark || "SPY"}` : "hit rate N/A";
+  const asOf = signal.trustAsOf ? ` · through ${displayDate(signal.trustAsOf)}` : "";
+  setField("trust-caption", signal.trust === null ? "Fewer than three mature, validated purchase episodes are available for this reporting owner." : `${signal.trustN} mature purchase episodes · ${excess} · ${hit}${asOf}. Historical research, not a prediction.`);
   setField("value", typeof signal.value === "number" ? compactMoney.format(signal.value) : "N/A");
   setField("price", typeof signal.price === "number" ? `$${signal.price.toFixed(2)}` : "N/A");
   setField("shares", typeof signal.shares === "number" ? whole.format(signal.shares) : "N/A");
@@ -267,11 +280,14 @@ function renderContext(signal) {
   sideBadge.className = `side-badge side-${signal.side.toLowerCase()}`;
   const meterWrap = document.querySelector('[data-field="meter-wrap"]');
   const meterCaption = document.querySelector('[data-field="trust-caption"]');
-  meterWrap.hidden = signal.side === "REVIEW";
-  meterCaption.hidden = signal.side === "REVIEW";
+  meterWrap.hidden = signal.side !== "BUY";
+  meterCaption.hidden = signal.side !== "BUY";
   const meter = document.querySelector("#signal-context .meter");
   meter.style.setProperty("--score", signal.trust ?? 50);
   meter.classList.toggle("unscored", signal.trust === null);
+  if (signal.trust === null) meter.removeAttribute("aria-valuenow");
+  else meter.setAttribute("aria-valuenow", String(signal.trust));
+  meter.setAttribute("aria-valuetext", signal.trust === null ? "Unscored because the mature sample is too small" : `${signal.trust} out of 100, ${signal.trustConfidence || trustConfidenceBand(signal.trustN)}`);
   const source = document.querySelector('[data-field="source"]');
   source.href = signal.source;
   const report = document.querySelector('[data-field="report"]');
@@ -410,19 +426,57 @@ for (const trade of politicalTrades) {
 }
 
 const trustBoard = document.querySelector("#trust-leaders");
-trustLeaders.forEach((leader, index) => {
-  const initials = leader.name.split(" ").map((part) => part[0]).slice(0, 2).join("");
-  const row = document.createElement("div");
-  row.className = "leader";
-  row.innerHTML = `
-    <span class="rank">0${index + 1}</span><div class="avatar">${initials}</div>
-    <div class="leader-name"><b>${leader.name}</b><small>${leader.role}</small></div>
-    <div class="leader-stat"><small>Avg. excess</small><b class="positive">+${leader.excess.toFixed(1)}%</b></div>
-    <div class="leader-stat"><small>Hit rate</small><b>${leader.hit}%</b></div>
-    <div class="leader-stat"><small>Sample</small><b>${leader.n}</b></div>
-    <div class="mini-score"><b>${leader.score}</b><span style="width:${leader.score}%"></span></div>`;
-  trustBoard.append(row);
-});
+
+function renderTrustBoard(insiders, snapshot) {
+  trustBoard.replaceChildren();
+  if (!insiders.length) {
+    const empty = document.createElement("p");
+    empty.className = "trust-empty";
+    empty.textContent = "Collecting enough validated purchase history to publish scores.";
+    trustBoard.append(empty);
+    return;
+  }
+  insiders.slice(0, 5).forEach((leader, index) => {
+    const initials = leader.name.split(" ").map((part) => part[0]).filter(Boolean).slice(0, 2).join("");
+    const row = document.createElement("div");
+    row.className = "leader";
+    const excessClass = leader.cappedAverageExcessReturnPct >= 0 ? "positive" : "negative";
+    const excessPrefix = leader.cappedAverageExcessReturnPct >= 0 ? "+" : "";
+    row.innerHTML = `
+      <span class="rank">${String(index + 1).padStart(2, "0")}</span><div class="avatar">${escapeHtml(initials)}</div>
+      <div class="leader-name"><b>${escapeHtml(leader.name)}</b><small>${escapeHtml(leader.role)} · ${escapeHtml(leader.confidence)} confidence</small></div>
+      <div class="leader-stat"><small>Capped avg. excess</small><b class="${excessClass}">${excessPrefix}${leader.cappedAverageExcessReturnPct.toFixed(1)}%</b></div>
+      <div class="leader-stat"><small>Hit rate vs. ${escapeHtml(snapshot.benchmark || "SPY")}</small><b>${whole.format(leader.hitRatePct)}%</b></div>
+      <div class="leader-stat"><small>Mature episodes</small><b>${whole.format(leader.sampleSize)}</b></div>
+      <div class="mini-score" aria-label="${escapeHtml(leader.scoreBand)} score, ${leader.score} out of 100"><b>${leader.score.toFixed(1)}</b><span style="width:${leader.score}%"></span></div>`;
+    trustBoard.append(row);
+  });
+  const leader = insiders[0];
+  const exampleMeter = document.querySelector("#trust-example-meter");
+  exampleMeter.style.setProperty("--score", leader.score);
+  exampleMeter.setAttribute("aria-valuenow", String(leader.score));
+  exampleMeter.setAttribute("aria-valuetext", `${leader.score} out of 100, ${leader.confidence} confidence`);
+  document.querySelector("#trust-example-score").textContent = leader.score.toFixed(1);
+  document.querySelector("#trust-example-band").textContent = `${leader.scoreBand} · ${leader.confidence}`;
+  document.querySelector("#trust-as-of").textContent = `Research snapshot through ${displayDate(snapshot.asOf)} · ${whole.format(insiders.length)} scored insiders`;
+  document.querySelector("#trust-snapshot-note").textContent = `Only resolved direct open-market purchases qualify. Outcomes use the next trading session after disclosure, a ${whole.format(snapshot.holdingPeriodSessions)}-session window, and ${snapshot.benchmark || "SPY"} as the benchmark. ${snapshot.limitations}`;
+}
+
+async function loadTrustScores() {
+  try {
+    const response = await fetch("./data/trust-scores.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`trust data returned ${response.status}`);
+    const snapshot = await response.json();
+    const insiders = snapshot.insiders || [];
+    trustSnapshotMeta = snapshot;
+    trustScoresByCik = new Map(insiders.map((item) => [item.reportingOwnerCik, item]));
+    renderTrustBoard(insiders, snapshot);
+  } catch (error) {
+    console.warn("Historical Trust Meter data is not available.", error);
+    renderTrustBoard([], {});
+    document.querySelector("#trust-as-of").textContent = "Collecting validated historical outcomes";
+  }
+}
 
 const marketMoves = document.querySelector("#market-moves");
 
@@ -482,7 +536,24 @@ function updateLedgerCounts(transactionCount, purchaseCount, saleCount, reviewCo
   document.querySelector("#filter-review-count").textContent = `(${whole.format(reviewCount)})`;
 }
 
+async function loadRoadmapVotes() {
+  try {
+    const response = await fetch("./data/roadmap-votes.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`roadmap vote data returned ${response.status}`);
+    const data = await response.json();
+    document.querySelector("#roadmap-vote-total").textContent = `${whole.format(data.totalVotes || 0)} public vote${data.totalVotes === 1 ? "" : "s"}`;
+    for (const option of data.options || []) {
+      const target = document.querySelector(`[data-vote-count="${option.id}"]`);
+      if (target) target.textContent = `${whole.format(option.votes || 0)} vote${option.votes === 1 ? "" : "s"} · cast yours ↗`;
+    }
+  } catch (error) {
+    console.warn("Roadmap vote totals are not available.", error);
+    document.querySelector("#roadmap-vote-total").textContent = "Public voting is open";
+  }
+}
+
 async function loadStageOneData() {
+  await Promise.all([loadTrustScores(), loadRoadmapVotes()]);
   try {
     const response = await fetch("./data/signals.json", { cache: "no-store" });
     if (!response.ok) throw new Error(`signal data returned ${response.status}`);

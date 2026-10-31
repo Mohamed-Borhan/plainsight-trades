@@ -465,6 +465,7 @@ button { color: inherit; }
 .trust-explainer li { display: grid; grid-template-columns: 1fr 1.5fr auto; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 9px; }
 .trust-explainer li span, .trust-explainer p { color: var(--muted); }
 .trust-explainer p { font-size: 10px; }
+.trust-empty { margin: 0; padding: 28px; color: rgba(255,255,255,.58); font-size: 12px; }
 
 .edition-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: 18px; }
 .lead-story { min-height: 410px; padding: 30px; background: var(--deep); color: var(--white); }
@@ -539,19 +540,30 @@ a.brief-row:hover b { color: var(--green); }
 .featured-feedback-card p { color: rgba(255,255,255,.56); }
 .roadmap-card { grid-column: 1; padding: 28px; }
 .roadmap-heading { display: flex; justify-content: space-between; gap: 24px; align-items: end; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
-.roadmap-heading a { color: var(--green); font-size: 10px; font-weight: 900; white-space: nowrap; }
+.roadmap-heading > span { color: var(--green); font-size: 10px; font-weight: 900; white-space: nowrap; }
 .roadmap-list, .changelog-card ol { margin: 0; padding: 0; list-style: none; }
-.roadmap-list li { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 13px 0; border-bottom: 1px solid var(--line); }
+.roadmap-list li { border-bottom: 1px solid var(--line); }
 .roadmap-list li:last-child { border-bottom: 0; }
+.roadmap-list a { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 12px; align-items: center; margin-inline: -8px; padding: 13px 8px; border-radius: 10px; text-decoration: none; transition: background .2s ease, transform .2s ease; }
+.roadmap-list a:hover, .roadmap-list a:focus-visible { background: var(--paper); transform: translateX(3px); }
+.roadmap-list a:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 .roadmap-list span, .roadmap-list small { color: var(--muted); font-size: 8px; }
+.roadmap-list a > span:nth-child(2) { display: grid; }
 .roadmap-list b { font-size: 10px; }
-.roadmap-list small { text-align: right; }
+.roadmap-list strong { color: var(--green); font-size: 8px; text-align: right; white-space: nowrap; }
+.roadmap-note { margin: 16px 0 0; padding-top: 15px; color: var(--muted); border-top: 1px solid var(--line); font-size: 9px; }
+.roadmap-note a { color: var(--green); font-weight: 900; }
 .changelog-card { grid-column: 2; padding: 28px; }
 .changelog-card > h3 { margin-bottom: 21px; }
-.changelog-card li { display: grid; grid-template-columns: 54px 1fr; gap: 14px; padding: 15px 0; border-top: 1px solid var(--line); }
+.changelog-card li { position: relative; display: grid; grid-template-columns: 54px 1fr; gap: 14px; margin-left: 4px; padding: 15px 0 15px 18px; border-left: 1px solid rgba(78,155,121,.35); }
+.changelog-card li::before { position: absolute; top: 20px; left: -5px; width: 9px; height: 9px; content: ""; background: var(--lime); border: 2px solid var(--white); border-radius: 50%; box-shadow: 0 0 0 1px rgba(78,155,121,.35); }
+.changelog-card li:first-child { padding-top: 4px; }
+.changelog-card li:first-child::before { top: 9px; }
 .changelog-card time { color: var(--green); font-size: 9px; font-weight: 900; text-transform: uppercase; }
 .changelog-card b { font-size: 10px; }
 .changelog-card p { margin: 3px 0 0; color: var(--muted); font-size: 9px; }
+.changelog-link { display: inline-flex; margin-top: 18px; color: var(--green); font-size: 10px; font-weight: 900; text-decoration: none; }
+.changelog-link:hover, .changelog-link:focus-visible { color: var(--deep); }
 .risk-note { display: grid; grid-template-columns: .8fr 1.2fr; gap: 70px; padding: clamp(70px, 8vw, 110px) clamp(22px, 7vw, 120px); background: var(--paper-2); }
 .risk-note h2 { font-size: clamp(36px, 4vw, 56px); }
 .risk-note p { color: var(--muted); font-size: 12px; }
@@ -650,8 +662,8 @@ footer a { color: rgba(255,255,255,.9); }
   .weekly-counts { grid-template-columns: 1fr 1fr; }
   .feedback-card { grid-template-columns: 1fr; }
   .feedback-card > a { grid-column: 1; }
-  .roadmap-list li { grid-template-columns: 25px 1fr; }
-  .roadmap-list small { grid-column: 2; text-align: left; }
+  .roadmap-list a { grid-template-columns: 25px 1fr; }
+  .roadmap-list strong { grid-column: 2; text-align: left; }
 }
 
 /* Daily public-filings brief */

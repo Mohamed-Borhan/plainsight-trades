@@ -1,0 +1,33 @@
+name: PlainSight roadmap vote
+description: Choose the one improvement you most want PlainSight to build next.
+title: "[Roadmap vote] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Choose one priority below. PlainSight counts one active vote per GitHub account; if you submit more than one, your most recently edited vote is used. This response is public, so do not include private or sensitive information.
+  - type: dropdown
+    id: roadmap
+    attributes:
+      label: What should PlainSight build next?
+      options:
+        - Clean and explain the review queue
+        - Validated Trust Meter
+        - Benchmark outcome charts
+        - Advanced filing filters and export
+        - Automated congressional disclosures
+        - Weekly delivery and watchlists
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: Why would this help you?
+      description: Optional. A short example can help shape the feature.
+  - type: checkboxes
+    id: public
+    attributes:
+      label: Public response check
+      options:
+        - label: I understand this vote is public and contains no private or sensitive information.
+          required: true
