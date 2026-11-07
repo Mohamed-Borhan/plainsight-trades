@@ -1,7 +1,20 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-31T17:41:33Z",
+  "generatedAt": "2026-11-07T18:44:11Z",
   "editions": [
+    {
+      "editionDate": "2026-11-07",
+      "periodStart": "2026-11-01",
+      "periodEnd": "2026-11-07",
+      "status": "published",
+      "path": "data/weekly/2026-11-07.json",
+      "counts": {
+        "qualifyingPurchases": 70,
+        "notableSales": 368,
+        "clusters": 11,
+        "reviewNeeded": 33
+      }
+    },
     {
       "editionDate": "2026-10-31",
       "periodStart": "2026-10-25",
